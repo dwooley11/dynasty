@@ -6,209 +6,402 @@
 <title>Dynasty League Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0c0d10;
-  --bg-2: #14161b;
-  --bg-3: #1c1f26;
-  --line: #2a2e38;
-  --ink: #e8e9ec;
-  --ink-2: #9499a3;
-  --ink-3: #5b6068;
-  --accent-gold: #d4a04a;
-  --accent-electric: #5fb8ff;
-  --accent-cyan: #4fd1c5;
-  --accent-rust: #c9573a;
-  --accent-red: #e25555;
+  --bg: #f6f7fb;
+  --bg-2: #ffffff;
+  --bg-3: #f0f2f7;
+  --line: #e4e7ee;
+  --line-2: #eef0f5;
+  --ink: #1a1d23;
+  --ink-2: #5b6271;
+  --ink-3: #98a0ad;
+
+  --pos-qb: #10b981;
+  --pos-qb-bg: #d6f5e8;
+  --pos-rb: #3b82f6;
+  --pos-rb-bg: #d8e6fb;
+  --pos-wr: #ec4899;
+  --pos-wr-bg: #fbdcea;
+  --pos-te: #a855f7;
+  --pos-te-bg: #ecddfb;
+  --pos-pk: #f59e0b;
+  --pos-pk-bg: #fcedcf;
+
+  --rank-good: #d3f5dc;
+  --rank-good-ink: #117a3a;
+  --rank-mid:  #fdf3cf;
+  --rank-mid-ink:  #8a6b13;
+  --rank-bad:  #fbdada;
+  --rank-bad-ink:  #a02828;
+
+  --shadow-sm: 0 1px 2px rgba(20,25,40,0.04), 0 1px 1px rgba(20,25,40,0.03);
+  --shadow-md: 0 4px 14px rgba(20,25,40,0.06), 0 1px 3px rgba(20,25,40,0.04);
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
-  letter-spacing: 0.01em;
-  background-image:
-    radial-gradient(circle at 0% 0%, rgba(95,184,255,0.06), transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(212,160,74,0.05), transparent 40%);
+  -webkit-font-smoothing: antialiased;
 }
-.dd-root { padding: 24px; }
+.dd-root { padding: 28px 36px; max-width: 1600px; margin: 0 auto; }
+
 .dd-header {
   display: flex; justify-content: space-between; align-items: flex-end;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 18px; margin-bottom: 24px;
+  padding-bottom: 22px; margin-bottom: 24px;
   gap: 16px; flex-wrap: wrap;
 }
 .dd-brand { display: flex; align-items: center; gap: 14px; }
 .dd-brand-mark {
-  width: 44px; height: 44px;
-  background: linear-gradient(135deg, var(--accent-gold), var(--accent-rust));
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
   display: grid; place-items: center;
-  font-size: 22px; color: #000; border-radius: 2px;
+  font-size: 26px; color: #fff; border-radius: 14px;
+  box-shadow: var(--shadow-md);
 }
 .dd-brand-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px; letter-spacing: 0.08em; line-height: 1;
+  font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
 }
 .dd-brand-sub {
-  font-size: 11px; color: var(--ink-2);
-  text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px;
+  font-size: 13px; color: var(--ink-2);
+  margin-top: 4px;
 }
-.dd-controls { display: flex; gap: 8px; }
+.dd-controls { display: flex; gap: 8px; align-items: center; }
 .dd-input {
   background: var(--bg-2); border: 1px solid var(--line);
-  color: var(--ink); padding: 10px 14px;
+  color: var(--ink); padding: 11px 16px;
   font-family: inherit; font-size: 13px;
-  width: 240px; letter-spacing: 0.05em;
+  width: 240px; border-radius: 10px;
+  box-shadow: var(--shadow-sm);
 }
-.dd-input:focus { outline: none; border-color: var(--accent-gold); }
+.dd-input:focus { outline: none; border-color: var(--pos-rb); }
 .dd-btn {
-  background: var(--accent-gold); color: #000; border: none;
-  padding: 10px 22px; font-family: inherit;
-  font-weight: 700; font-size: 12px;
-  letter-spacing: 0.15em; cursor: pointer;
-  transition: background 0.15s;
+  background: var(--ink); color: #fff; border: none;
+  padding: 11px 22px; font-family: inherit;
+  font-weight: 700; font-size: 13px;
+  border-radius: 10px; cursor: pointer;
+  transition: transform 0.1s, background 0.15s;
+  box-shadow: var(--shadow-sm);
 }
-.dd-btn:hover { background: #e8b658; }
+.dd-btn:hover { background: #2a2f3b; }
+.dd-btn:active { transform: translateY(1px); }
 .dd-btn:disabled { background: var(--ink-3); cursor: wait; }
 .dd-status {
   background: var(--bg-2);
-  border-left: 2px solid var(--accent-electric);
-  padding: 10px 14px; font-size: 12px;
-  color: var(--ink-2); margin-bottom: 16px;
-  letter-spacing: 0.1em;
+  border-left: 3px solid var(--pos-rb);
+  border-radius: 10px;
+  padding: 12px 16px; font-size: 13px;
+  color: var(--ink-2); margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
 }
 .dd-error {
-  background: rgba(226,85,85,0.1);
-  border-left: 2px solid var(--accent-red);
-  padding: 10px 14px; font-size: 13px;
-  color: #ffb0b0; margin-bottom: 16px;
+  background: #fef0f0;
+  border-left: 3px solid #e25555;
+  border-radius: 10px;
+  padding: 12px 16px; font-size: 13px;
+  color: #a02828; margin-bottom: 14px;
 }
 .dd-meta {
   display: flex; flex-wrap: wrap; gap: 28px;
-  padding: 14px 18px; background: var(--bg-2);
-  border: 1px solid var(--line); margin-bottom: 28px;
+  padding: 16px 22px; background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 14px;
+  margin-bottom: 24px; box-shadow: var(--shadow-sm);
 }
 .dd-meta-k {
   font-size: 10px; color: var(--ink-3);
-  letter-spacing: 0.18em; margin-right: 8px;
+  letter-spacing: 0.16em; margin-right: 8px;
+  text-transform: uppercase; font-weight: 700;
 }
-.dd-meta-v { font-size: 13px; font-weight: 600; }
-.dd-section {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px; letter-spacing: 0.12em;
-  margin: 0 0 14px; padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-2);
-}
-.dd-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 12px; margin-bottom: 32px;
-}
-.dd-card {
-  text-align: left; background: var(--bg-2);
+.dd-meta-v { font-size: 14px; font-weight: 600; }
+
+/* ========== Roster strip with headshots ========== */
+.dd-strip-wrap {
+  background: var(--bg-2);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--card-accent);
-  color: var(--ink); font-family: inherit;
-  padding: 0; cursor: pointer; display: flex;
-  transition: transform 0.12s, border-color 0.12s;
+  border-radius: 16px;
+  padding: 18px 18px 20px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-sm);
 }
-.dd-card:hover { transform: translateY(-2px); border-color: var(--card-accent); }
-.dd-card.active {
-  background: var(--bg-3); border-color: var(--card-accent);
-  box-shadow: 0 0 0 1px var(--card-accent);
-}
-.dd-card-rank {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 38px; color: var(--card-accent);
-  padding: 14px 12px 0 14px; line-height: 1; min-width: 60px;
-}
-.dd-card-body { flex: 1; padding: 14px 14px 14px 0; }
-.dd-card-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
-.dd-card-owner { font-size: 11px; color: var(--ink-3); margin-bottom: 8px; }
-.dd-card-label {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  letter-spacing: 0.18em; background: var(--card-accent);
-  color: #000; padding: 3px 8px; margin-bottom: 8px;
-}
-.dd-card-blurb {
-  font-size: 11px; color: var(--ink-2);
-  margin-bottom: 12px; min-height: 30px;
-}
-.dd-card-stats {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px 16px; margin-bottom: 8px;
-}
-.dd-card-stats > div {
-  display: flex; justify-content: space-between;
-  font-size: 11px; border-bottom: 1px dotted var(--line);
-  padding-bottom: 2px;
-}
-.dd-card-stats span { color: var(--ink-3); letter-spacing: 0.1em; }
-.dd-card-stats strong { color: var(--ink); }
-.dd-bar { height: 2px; background: var(--line); margin-top: 6px; }
-.dd-bar-fill { height: 100%; background: var(--card-accent); transition: width 0.4s; }
-.dd-detail {
-  background: var(--bg-2); border: 1px solid var(--line);
-  padding: 24px; margin-bottom: 32px;
-}
-.dd-detail-head {
+.dd-strip-head {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 20px; padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
 }
-.dd-detail-team {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px; letter-spacing: 0.05em;
+.dd-strip-title {
+  font-size: 18px; font-weight: 800; letter-spacing: -0.01em;
 }
-.dd-detail-owner { font-size: 11px; color: var(--ink-3); }
-.dd-detail-label {
-  color: #000; padding: 8px 16px;
-  font-weight: 700; font-size: 12px; letter-spacing: 0.18em;
+.dd-strip-sub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.dd-strip-tier {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--rank-good);
+  color: var(--rank-good-ink);
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
 }
-.dd-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
-.dd-detail-section h3 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 14px; letter-spacing: 0.18em;
-  color: var(--ink-2); margin: 0 0 10px;
-  padding-bottom: 6px; border-bottom: 1px dotted var(--line);
+.dd-strip {
+  display: flex; gap: 10px; overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
 }
-.dd-lineup-row, .dd-roster-row, .dd-pick-row {
-  display: grid; gap: 10px; padding: 6px 0;
-  font-size: 12px; border-bottom: 1px dotted var(--line);
-  align-items: baseline;
+.dd-strip::-webkit-scrollbar { height: 8px; }
+.dd-strip::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+.dd-pchip {
+  flex: 0 0 130px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  display: flex; flex-direction: column;
+  transition: transform 0.12s, box-shadow 0.12s;
 }
-.dd-lineup-row { grid-template-columns: 70px 1fr auto; }
-.dd-roster-row { grid-template-columns: 40px 1fr auto auto; }
-.dd-pick-row { grid-template-columns: 1fr auto; }
-.dd-slot, .dd-pos {
-  font-size: 10px; color: var(--ink-3);
-  letter-spacing: 0.12em; font-weight: 700;
+.dd-pchip:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.dd-pchip-tag {
+  position: absolute; top: 8px; left: 8px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--pos-qb-bg); color: var(--pos-qb);
+  text-transform: uppercase;
+  z-index: 2;
 }
-.dd-lineup-name em {
-  font-style: normal; color: var(--ink-3);
-  margin-left: 6px; font-size: 10px;
+.dd-pchip-tag.bench { background: #fde68a; color: #92400e; }
+.dd-pchip-tag.start { background: #d6f5e8; color: #117a3a; }
+.dd-pchip-img-wrap {
+  position: relative;
+  height: 110px;
+  background: var(--pos-qb-bg);
+  display: flex; align-items: flex-end; justify-content: center;
+  overflow: hidden;
 }
-.dd-lineup-val, .dd-pval {
-  color: var(--accent-gold); font-weight: 700;
+.dd-pchip-img {
+  height: 105%;
+  width: auto;
+  object-fit: cover;
+  object-position: center top;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+}
+.dd-pchip-fallback {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  display: grid; place-items: center;
+  font-size: 22px; font-weight: 800;
+  color: var(--ink); margin-bottom: 14px;
+}
+.dd-pchip-body {
+  padding: 8px 10px 10px;
+  text-align: center;
+}
+.dd-pchip-pos {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  padding: 3px 8px; border-radius: 6px;
+  background: var(--pos-qb); color: #fff;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.dd-pchip-name {
+  font-size: 12px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.pos-QB    .dd-pchip-img-wrap { background: var(--pos-qb-bg); }
+.pos-QB    .dd-pchip-pos { background: var(--pos-qb); }
+.pos-RB    .dd-pchip-img-wrap { background: var(--pos-rb-bg); }
+.pos-RB    .dd-pchip-pos { background: var(--pos-rb); }
+.pos-WR    .dd-pchip-img-wrap { background: var(--pos-wr-bg); }
+.pos-WR    .dd-pchip-pos { background: var(--pos-wr); }
+.pos-TE    .dd-pchip-img-wrap { background: var(--pos-te-bg); }
+.dd-pchip.pos-TE  .dd-pchip-pos { background: var(--pos-te); }
+.dd-pchip.pos-DEF .dd-pchip-pos,
+.dd-pchip.pos-K   .dd-pchip-pos { background: var(--ink-2); }
+
+/* ========== Power Rankings (rows) ========== */
+.dd-section {
+  font-size: 18px; font-weight: 800; letter-spacing: -0.01em;
+  margin: 0 0 12px; display: flex; align-items: center; gap: 12px;
+}
+.dd-section-legend {
+  display: flex; gap: 12px; font-size: 11px; color: var(--ink-2);
+  font-weight: 500; letter-spacing: 0; text-transform: none;
+}
+.dd-legend-dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 5px; vertical-align: middle;
+}
+
+.dd-rank-list {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.dd-rank-row {
+  display: grid;
+  grid-template-columns: 60px minmax(160px,1fr) minmax(280px,2fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-2);
+  cursor: pointer;
+  transition: background 0.12s;
+  width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0;
+  font-family: inherit; text-align: left; color: inherit;
+}
+.dd-rank-row:last-child { border-bottom: none; }
+.dd-rank-row:hover { background: var(--bg-3); }
+.dd-rank-row.active { background: var(--bg-3); }
+.dd-rank-row.active .dd-rank-num { color: var(--ink); }
+
+.dd-rank-num {
+  font-size: 22px; font-weight: 800; color: var(--ink-3);
+  letter-spacing: -0.02em;
+}
+.dd-rank-team-name { font-size: 14px; font-weight: 700; line-height: 1.2; }
+.dd-rank-team-owner { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+.dd-bar-stack {
+  display: flex; height: 14px; border-radius: 999px; overflow: hidden;
+  background: var(--bg-3);
+  width: 100%;
+}
+.dd-bar-seg {
+  height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 10px; font-weight: 700;
+  min-width: 0;
+  transition: filter 0.12s;
+}
+.dd-bar-seg:hover { filter: brightness(1.05); }
+
+.dd-rank-stats {
+  display: flex; gap: 14px; align-items: center;
+  font-size: 11px; color: var(--ink-2);
+  flex-wrap: wrap; justify-content: flex-end;
+}
+.dd-rank-stat-k { color: var(--ink-3); margin-right: 4px; }
+.dd-rank-stat-v { color: var(--ink); font-weight: 700; }
+.dd-rank-tier {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+/* ========== Position Breakdown Columns ========== */
+.dd-pos-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.dd-pos-col {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.dd-pos-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px;
+  color: #fff; font-size: 13px; font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.dd-pos-head .dd-pos-rank {
+  background: rgba(255,255,255,0.95);
+  padding: 2px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 800;
+  min-width: 28px; text-align: center;
+}
+.col-QB    .dd-pos-head { background: var(--pos-qb); }    .col-QB    .dd-pos-head .dd-pos-rank { color: var(--pos-qb); }
+.col-RB    .dd-pos-head { background: var(--pos-rb); }    .col-RB    .dd-pos-head .dd-pos-rank { color: var(--pos-rb); }
+.col-WR    .dd-pos-head { background: var(--pos-wr); }    .col-WR    .dd-pos-head .dd-pos-rank { color: var(--pos-wr); }
+.col-TE    .dd-pos-head { background: var(--pos-te); }    .col-TE    .dd-pos-head .dd-pos-rank { color: var(--pos-te); }
+.col-PICKS .dd-pos-head { background: var(--pos-pk); }    .col-PICKS .dd-pos-head .dd-pos-rank { color: var(--pos-pk); }
+
+.dd-pos-body { padding: 8px; }
+.dd-pos-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  gap: 8px; align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.dd-pos-row + .dd-pos-row { margin-top: 2px; }
+.dd-pos-row:hover { background: var(--bg-3); }
+.dd-pos-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg-3);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--ink-2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dd-pos-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dd-pos-name {
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dd-pos-val {
+  font-size: 11px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px; text-align: right;
+}
+.dd-pos-rk-pill {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 6px;
+  min-width: 30px; text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.dd-page { color: var(--ink-3); font-size: 11px; }
-.dd-empty { color: var(--ink-3); font-style: italic; }
-.dd-roster, .dd-lineup, .dd-picks { max-height: 420px; overflow-y: auto; }
-.dd-empty-state { text-align: center; padding: 60px 20px; color: var(--ink-2); }
-.dd-empty-state .dim { color: var(--ink-3); font-size: 12px; margin-top: 8px; }
+.rk-good { background: var(--rank-good); color: var(--rank-good-ink); }
+.rk-mid  { background: var(--rank-mid);  color: var(--rank-mid-ink); }
+.rk-bad  { background: var(--rank-bad);  color: var(--rank-bad-ink); }
 
-@media (max-width: 920px) {
-  .dd-detail-grid { grid-template-columns: 1fr; }
+.dd-pick-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 8px; align-items: center;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.dd-pick-row + .dd-pick-row { margin-top: 2px; }
+.dd-pick-row:hover { background: var(--bg-3); }
+.dd-pick-icon {
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  font-size: 14px;
+}
+
+.dd-empty-state {
+  text-align: center; padding: 80px 20px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink-2); box-shadow: var(--shadow-sm);
+}
+.dd-empty-state .dim { color: var(--ink-3); font-size: 13px; margin-top: 8px; }
+
+@media (max-width: 1100px) {
+  .dd-pos-grid { grid-template-columns: repeat(2, 1fr); }
+  .dd-rank-row { grid-template-columns: 48px 1fr 100%; row-gap: 10px; }
+  .dd-rank-stats { grid-column: 1 / -1; justify-content: flex-start; }
 }
 @media (max-width: 720px) {
+  .dd-root { padding: 18px; }
   .dd-header { flex-direction: column; align-items: stretch; }
   .dd-controls { width: 100%; }
   .dd-input { flex: 1; width: auto; }
+  .dd-pos-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -231,6 +424,14 @@ import { createRoot } from "react-dom/client";
 const e = React.createElement;
 const fmt = (n) => (typeof n === "number" ? Math.round(n).toLocaleString() : "—");
 
+const POS_COLORS = {
+  QB: { hex: "#10b981" },
+  RB: { hex: "#3b82f6" },
+  WR: { hex: "#ec4899" },
+  TE: { hex: "#a855f7" },
+  PICKS: { hex: "#f59e0b" }
+};
+
 function rebuildScore(age, pos) {
   if (!age) return 0.5;
   const peakByPos = { QB: 30, RB: 25, WR: 27, TE: 28 };
@@ -248,6 +449,20 @@ function normName(s) {
     .replace(/[^a-z0-9 ]/g, "")
     .replace(/\b(jr|sr|ii|iii|iv)\b/g, "")
     .replace(/\s+/g, " ").trim();
+}
+
+function shortName(name) {
+  if (!name) return "";
+  const parts = name.split(" ");
+  if (parts.length === 1) return parts[0];
+  return parts[0][0] + ". " + parts.slice(1).join(" ");
+}
+
+function initials(name) {
+  if (!name) return "?";
+  const parts = name.split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function slotMatches(slot, pos) {
@@ -284,7 +499,12 @@ function pickStarters(playerIds, valueMap, rosterPositions) {
       starters.push({ slot, empty: true });
     }
   }
-  return { starters, totalStarterValue };
+  const benchIds = playerIds.filter((id) => !used.has(id));
+  const bench = benchIds
+    .map((id) => valueMap[id])
+    .filter(Boolean)
+    .sort((a, b) => b.value - a.value);
+  return { starters, bench, totalStarterValue };
 }
 
 function approxPickValue(season, round, currentSeason, isSF) {
@@ -294,6 +514,48 @@ function approxPickValue(season, round, currentSeason, isSF) {
     : { 1: 4200, 2: 1700, 3: 600, 4: 200 };
   const v = base[round] || 100;
   return Math.round(v * Math.pow(0.85, yearsOut));
+}
+
+function rankClass(rank, total) {
+  if (!rank || !total) return "rk-mid";
+  const p = rank / total;
+  if (p <= 0.25) return "rk-good";
+  if (p <= 0.6)  return "rk-mid";
+  return "rk-bad";
+}
+
+function tierFor(rank, total) {
+  if (rank === 1) return { label: "Juggernaut", cls: "rk-good" };
+  if (rank <= 3)  return { label: "Contender",  cls: "rk-good" };
+  if (rank <= Math.ceil(total / 2)) return { label: "Riser", cls: "rk-mid" };
+  if (rank <= total - 2) return { label: "Pretender", cls: "rk-bad" };
+  return { label: "Rebuilder", cls: "rk-bad" };
+}
+
+function PlayerImage({ pid, name, position }) {
+  const [errored, setErrored] = useState(false);
+  if (!pid || errored) {
+    return e('div', { className: 'dd-pchip-fallback' }, initials(name));
+  }
+  return e('img', {
+    className: 'dd-pchip-img',
+    src: `https://sleepercdn.com/content/nfl/players/${pid}.jpg`,
+    alt: name,
+    onError: () => setErrored(true)
+  });
+}
+
+function PlayerAvatar({ pid, name }) {
+  const [errored, setErrored] = useState(false);
+  return e('div', { className: 'dd-pos-avatar' },
+    (!pid || errored)
+      ? initials(name)
+      : e('img', {
+          src: `https://sleepercdn.com/content/nfl/players/thumb/${pid}.jpg`,
+          alt: name,
+          onError: () => setErrored(true)
+        })
+  );
 }
 
 function DynastyAnalyzer() {
@@ -415,6 +677,25 @@ function DynastyAnalyzer() {
     return map;
   }
 
+  // Build league-wide position ranks (across all rostered players in this league)
+  const leaguePosRanks = useMemo(() => {
+    if (!rosters.length || !Object.keys(valueMap).length) return {};
+    const byPos = { QB: [], RB: [], WR: [], TE: [] };
+    const rosteredIds = new Set();
+    for (const r of rosters) for (const id of (r.players || [])) rosteredIds.add(id);
+    for (const id of rosteredIds) {
+      const p = valueMap[id];
+      if (!p || !p.position || !byPos[p.position]) continue;
+      byPos[p.position].push(p);
+    }
+    const ranks = {};
+    for (const pos of Object.keys(byPos)) {
+      byPos[pos].sort((a, b) => b.value - a.value);
+      byPos[pos].forEach((p, i) => { ranks[p.id] = i + 1; });
+    }
+    return ranks;
+  }, [rosters, valueMap]);
+
   const teamCards = useMemo(() => {
     if (!league || !rosters.length || !Object.keys(valueMap).length) return [];
     const currentSeason = parseInt(league.season || "2026", 10);
@@ -451,69 +732,72 @@ function DynastyAnalyzer() {
       const totalValue = owned.reduce((a, b) => a + b.value, 0);
       const ageList = owned.filter(p => p.age);
       const avgAge = ageList.length ? ageList.reduce((a, b) => a + b.age, 0) / ageList.length : 0;
-      const { starters, totalStarterValue } = pickStarters(playerIds, valueMap, league.roster_positions);
+      const { starters, bench, totalStarterValue } = pickStarters(playerIds, valueMap, league.roster_positions);
       const youngScore = owned.reduce(
         (acc, p) => acc + p.value * rebuildScore(p.age, p.position), 0
       ) / (totalValue || 1);
       const picks = picksForRoster(r.roster_id);
       const pickValue = picks.reduce((a, b) => a + b.value, 0);
       const user = users.find(u => u.user_id === r.owner_id);
+
+      // Position breakdown for this team
+      const byPos = { QB: [], RB: [], WR: [], TE: [] };
+      for (const p of owned) {
+        if (byPos[p.position]) byPos[p.position].push(p);
+      }
+      const posValues = {};
+      for (const pos of Object.keys(byPos)) {
+        byPos[pos].sort((a, b) => b.value - a.value);
+        posValues[pos] = byPos[pos].reduce((a, p) => a + p.value, 0);
+      }
+      posValues.PICKS = pickValue;
+
       return {
         id: r.roster_id,
         owner: user?.display_name || `Team ${r.roster_id}`,
         teamName: user?.metadata?.team_name || user?.display_name || `Team ${r.roster_id}`,
+        avatar: user?.avatar,
         totalValue, totalStarterValue, pickValue,
         combinedValue: totalValue + pickValue,
         avgAge, youngScore,
         wins: r.settings?.wins || 0,
         losses: r.settings?.losses || 0,
-        starters,
+        ties: r.settings?.ties || 0,
+        pointsFor: ((r.settings?.fpts || 0) + (r.settings?.fpts_decimal || 0) / 100),
+        pointsAgainst: ((r.settings?.fpts_against || 0) + (r.settings?.fpts_against_decimal || 0) / 100),
+        streak: r.metadata?.streak || "",
+        starters, bench,
         roster: owned.sort((a, b) => b.value - a.value),
+        byPos,
+        posValues,
         picks: picks.sort((a, b) => a.season - b.season || a.round - b.round)
       };
     }).sort((a, b) => b.combinedValue - a.combinedValue);
   }, [league, rosters, users, valueMap, tradedPicks, isSuperflex]);
 
-  const labeledTeams = useMemo(() => {
-    if (!teamCards.length) return [];
-    const values = teamCards.map(t => t.combinedValue);
-    const max = Math.max(...values), min = Math.min(...values);
-    const range = max - min || 1;
-    return teamCards.map(t => {
-      const valuePctile = (t.combinedValue - min) / range;
-      const young = t.youngScore;
-      let label, blurb, accent;
-      if (valuePctile >= 0.66 && young < 0.55) {
-        label = "CONTENDER"; accent = "var(--accent-gold)";
-        blurb = "Win-now roster. Aggressive moves justified.";
-      } else if (valuePctile >= 0.66) {
-        label = "FUTURE KING"; accent = "var(--accent-electric)";
-        blurb = "Top value AND young. Dangerous for years.";
-      } else if (valuePctile <= 0.4 && young >= 0.6) {
-        label = "REBUILDER"; accent = "var(--accent-cyan)";
-        blurb = "Young assets — accumulate picks, play long.";
-      } else if (valuePctile <= 0.4) {
-        label = "PRETENDER"; accent = "var(--accent-rust)";
-        blurb = "Low value, aging core. Sell vets now.";
-      } else if (young >= 0.55) {
-        label = "RISER"; accent = "var(--accent-cyan)";
-        blurb = "Trending up. A piece or two from contending.";
-      } else {
-        label = "PRETENDER"; accent = "var(--accent-rust)";
-        blurb = "Mediocre value, aging core. Pivot soon.";
-      }
-      return { ...t, label, blurb, accent, valuePctile };
-    });
+  // Compute team rank within each position group
+  const posRankings = useMemo(() => {
+    const out = {};
+    for (const pos of ["QB", "RB", "WR", "TE", "PICKS"]) {
+      const sorted = [...teamCards].sort((a, b) => (b.posValues[pos] || 0) - (a.posValues[pos] || 0));
+      sorted.forEach((t, i) => {
+        out[t.id] = out[t.id] || {};
+        out[t.id][pos] = i + 1;
+      });
+    }
+    return out;
   }, [teamCards]);
 
-  const activeTeam = labeledTeams.find(t => t.id === activeTeamId);
+  const totalTeams = teamCards.length;
+  const activeTeam = teamCards.find(t => t.id === activeTeamId);
+  const activeTeamRank = activeTeam ? teamCards.findIndex(t => t.id === activeTeamId) + 1 : 0;
 
   return e('div', { className: 'dd-root' },
     e('header', { className: 'dd-header' },
       e('div', { className: 'dd-brand' },
-        e('div', { className: 'dd-brand-mark' }, '◆'),
+        e('div', { className: 'dd-brand-mark' }, '🏈'),
         e('div', null,
-          e('div', { className: 'dd-brand-title' }, 'DYNASTY LEAGUE ANALYZER'),
+          e('div', { className: 'dd-brand-title' }, 'Dynasty League Analyzer'),
           e('div', { className: 'dd-brand-sub' }, 'Sleeper × KeepTradeCut · Power Rankings & Roster Construction')
         )
       ),
@@ -528,117 +812,194 @@ function DynastyAnalyzer() {
           onClick: loadLeague,
           disabled: loading,
           className: 'dd-btn'
-        }, loading ? 'LOADING…' : 'ANALYZE')
+        }, loading ? 'Loading…' : 'Analyze')
       )
     ),
     stage && e('div', { className: 'dd-status' }, '▸ ' + stage),
     error && e('div', { className: 'dd-error' }, '⚠ ' + error),
     league && e('div', { className: 'dd-meta' },
       e('div', null,
-        e('span', { className: 'dd-meta-k' }, 'LEAGUE'),
+        e('span', { className: 'dd-meta-k' }, 'League'),
         e('span', { className: 'dd-meta-v' }, league.name)
       ),
       e('div', null,
-        e('span', { className: 'dd-meta-k' }, 'SEASON'),
+        e('span', { className: 'dd-meta-k' }, 'Season'),
         e('span', { className: 'dd-meta-v' }, league.season + (league.status === 'complete' ? ' (complete)' : ''))
       ),
       e('div', null,
-        e('span', { className: 'dd-meta-k' }, 'FORMAT'),
+        e('span', { className: 'dd-meta-k' }, 'Format'),
         e('span', { className: 'dd-meta-v' },
-          (isSuperflex ? 'SUPERFLEX' : '1QB') + ' · ' +
+          (isSuperflex ? 'Superflex' : '1QB') + ' · ' +
           (league.scoring_settings?.rec === 1 ? 'PPR'
             : league.scoring_settings?.rec === 0.5 ? 'Half-PPR' : 'Std')
         )
       ),
       e('div', null,
-        e('span', { className: 'dd-meta-k' }, 'TEAMS'),
+        e('span', { className: 'dd-meta-k' }, 'Teams'),
         e('span', { className: 'dd-meta-v' }, rosters.length)
       ),
       valueSource && e('div', null,
-        e('span', { className: 'dd-meta-k' }, 'VALUES'),
+        e('span', { className: 'dd-meta-k' }, 'Values'),
         e('span', { className: 'dd-meta-v' }, valueSource)
       )
     ),
-    labeledTeams.length > 0 && e(React.Fragment, null,
-      e('h2', { className: 'dd-section' }, 'POWER RANKINGS'),
-      e('div', { className: 'dd-grid' },
-        labeledTeams.map((t, i) => e('button', {
-          key: t.id,
-          onClick: () => setActiveTeamId(t.id),
-          className: 'dd-card' + (activeTeamId === t.id ? ' active' : ''),
-          style: { '--card-accent': t.accent }
-        },
-          e('div', { className: 'dd-card-rank' }, '#' + (i + 1)),
-          e('div', { className: 'dd-card-body' },
-            e('div', { className: 'dd-card-name' }, t.teamName),
-            e('div', { className: 'dd-card-owner' }, '@' + t.owner),
-            e('div', { className: 'dd-card-label' }, t.label),
-            e('div', { className: 'dd-card-blurb' }, t.blurb),
-            e('div', { className: 'dd-card-stats' },
-              e('div', null, e('span', null, 'VALUE'), e('strong', null, fmt(t.combinedValue))),
-              e('div', null, e('span', null, 'STARTERS'), e('strong', null, fmt(t.totalStarterValue))),
-              e('div', null, e('span', null, 'PICKS'), e('strong', null, fmt(t.pickValue))),
-              e('div', null, e('span', null, 'AVG AGE'), e('strong', null, t.avgAge ? t.avgAge.toFixed(1) : '—'))
-            ),
-            e('div', { className: 'dd-bar' },
-              e('div', { className: 'dd-bar-fill', style: { width: (t.valuePctile * 100) + '%' } })
-            )
-          )
-        ))
-      ),
-      activeTeam && e('div', { className: 'dd-detail' },
-        e('div', { className: 'dd-detail-head' },
+
+    // Roster strip with headshots
+    activeTeam && (() => {
+      const tier = tierFor(activeTeamRank, totalTeams);
+      return e('div', { className: 'dd-strip-wrap' },
+        e('div', { className: 'dd-strip-head' },
           e('div', null,
-            e('div', { className: 'dd-detail-team' }, activeTeam.teamName),
-            e('div', { className: 'dd-detail-owner' }, '@' + activeTeam.owner)
+            e('div', { className: 'dd-strip-title' }, activeTeam.teamName),
+            e('div', { className: 'dd-strip-sub' }, '@' + activeTeam.owner + ' · Click another team below to switch')
           ),
-          e('div', { className: 'dd-detail-label', style: { background: activeTeam.accent } }, activeTeam.label)
+          e('div', { className: 'dd-strip-tier ' + tier.cls,
+                    style: { background: tier.cls === 'rk-good' ? 'var(--rank-good)' :
+                                       tier.cls === 'rk-mid'  ? 'var(--rank-mid)'  : 'var(--rank-bad)',
+                             color:      tier.cls === 'rk-good' ? 'var(--rank-good-ink)' :
+                                       tier.cls === 'rk-mid'  ? 'var(--rank-mid-ink)'  : 'var(--rank-bad-ink)' } },
+            tier.label
+          )
         ),
-        e('div', { className: 'dd-detail-grid' },
-          e('div', { className: 'dd-detail-section' },
-            e('h3', null, 'STARTING LINEUP'),
-            e('div', { className: 'dd-lineup' },
-              activeTeam.starters.map((s, i) => e('div', { key: i, className: 'dd-lineup-row' },
-                e('span', { className: 'dd-slot' }, s.slot),
-                s.empty
-                  ? e('span', { className: 'dd-empty' }, '— empty —')
-                  : e(React.Fragment, null,
-                      e('span', { className: 'dd-lineup-name' },
-                        s.name + ' ',
-                        e('em', null, s.position + ' · ' + (s.team || 'FA'))
-                      ),
-                      e('span', { className: 'dd-lineup-val' }, fmt(s.value))
-                    )
-              ))
+        e('div', { className: 'dd-strip' },
+          [
+            ...activeTeam.starters
+              .filter(s => !s.empty)
+              .map(s => ({ ...s, _tag: 'start' })),
+            ...activeTeam.bench.map(p => ({ ...p, _tag: 'bench' }))
+          ].map((p, i) => {
+            const pos = p.position || 'NA';
+            const lgRank = leaguePosRanks[p.id];
+            return e('div', { key: p.id || i, className: 'dd-pchip pos-' + pos },
+              e('div', { className: 'dd-pchip-tag ' + p._tag }, p._tag === 'start' ? 'Starting' : 'Bench'),
+              e('div', { className: 'dd-pchip-img-wrap' },
+                e(PlayerImage, { pid: p.id, name: p.name, position: pos })
+              ),
+              e('div', { className: 'dd-pchip-body' },
+                e('div', { className: 'dd-pchip-pos' }, pos + (lgRank ? ' ' + lgRank : '')),
+                e('div', { className: 'dd-pchip-name' }, shortName(p.name))
+              )
+            );
+          })
+        )
+      );
+    })(),
+
+    teamCards.length > 0 && e(React.Fragment, null,
+      e('h2', { className: 'dd-section' },
+        'Power Rankings',
+        e('div', { className: 'dd-section-legend' },
+          e('span', null, e('span', { className: 'dd-legend-dot', style: { background: POS_COLORS.QB.hex } }), 'QB'),
+          e('span', null, e('span', { className: 'dd-legend-dot', style: { background: POS_COLORS.RB.hex } }), 'RB'),
+          e('span', null, e('span', { className: 'dd-legend-dot', style: { background: POS_COLORS.WR.hex } }), 'WR'),
+          e('span', null, e('span', { className: 'dd-legend-dot', style: { background: POS_COLORS.TE.hex } }), 'TE'),
+          e('span', null, e('span', { className: 'dd-legend-dot', style: { background: POS_COLORS.PICKS.hex } }), 'PICKS')
+        )
+      ),
+      e('div', { className: 'dd-rank-list' },
+        teamCards.map((t, i) => {
+          const rank = i + 1;
+          const tier = tierFor(rank, totalTeams);
+          const total = (t.posValues.QB || 0) + (t.posValues.RB || 0) +
+                        (t.posValues.WR || 0) + (t.posValues.TE || 0) +
+                        (t.posValues.PICKS || 0) || 1;
+          const segs = ["QB", "RB", "WR", "TE", "PICKS"].map(pos => ({
+            pos, pct: ((t.posValues[pos] || 0) / total) * 100,
+            rank: posRankings[t.id]?.[pos]
+          }));
+          return e('button', {
+            key: t.id,
+            onClick: () => setActiveTeamId(t.id),
+            className: 'dd-rank-row' + (activeTeamId === t.id ? ' active' : '')
+          },
+            e('div', { className: 'dd-rank-num' }, rank),
+            e('div', null,
+              e('div', { className: 'dd-rank-team-name' }, t.teamName),
+              e('div', { className: 'dd-rank-team-owner' }, '@' + t.owner)
+            ),
+            e('div', { className: 'dd-bar-stack' },
+              segs.map(s => s.pct > 0 && e('div', {
+                key: s.pos,
+                className: 'dd-bar-seg',
+                style: { width: s.pct + '%', background: POS_COLORS[s.pos].hex },
+                title: `${s.pos}: ${fmt(t.posValues[s.pos] || 0)} (rank ${s.rank}/${totalTeams})`
+              }, s.pct > 6 ? (s.rank || '') : ''))
+            ),
+            e('div', { className: 'dd-rank-stats' },
+              e('span', null,
+                e('span', { className: 'dd-rank-stat-k' }, 'Record'),
+                e('span', { className: 'dd-rank-stat-v' }, t.wins + '-' + t.losses + (t.ties ? '-' + t.ties : ''))
+              ),
+              e('span', null,
+                e('span', { className: 'dd-rank-stat-k' }, 'Value'),
+                e('span', { className: 'dd-rank-stat-v' }, fmt(t.combinedValue))
+              ),
+              e('span', null,
+                e('span', { className: 'dd-rank-stat-k' }, 'Avg Age'),
+                e('span', { className: 'dd-rank-stat-v' }, t.avgAge ? t.avgAge.toFixed(1) : '—')
+              ),
+              e('span', { className: 'dd-rank-tier ' + tier.cls,
+                          style: { background: tier.cls === 'rk-good' ? 'var(--rank-good)' :
+                                             tier.cls === 'rk-mid'  ? 'var(--rank-mid)'  : 'var(--rank-bad)',
+                                   color:      tier.cls === 'rk-good' ? 'var(--rank-good-ink)' :
+                                             tier.cls === 'rk-mid'  ? 'var(--rank-mid-ink)'  : 'var(--rank-bad-ink)' } },
+                tier.label)
             )
-          ),
-          e('div', { className: 'dd-detail-section' },
-            e('h3', null, 'FULL ROSTER (BY VALUE)'),
-            e('div', { className: 'dd-roster' },
-              activeTeam.roster.map(p => e('div', { key: p.id, className: 'dd-roster-row' },
-                e('span', { className: 'dd-pos' }, p.position),
-                e('span', { className: 'dd-pname' }, p.name),
-                e('span', { className: 'dd-page' }, p.age ? (p.age + 'yo') : ''),
-                e('span', { className: 'dd-pval' }, fmt(p.value))
-              ))
+          );
+        })
+      ),
+
+      // Position breakdown columns
+      activeTeam && e('div', { className: 'dd-pos-grid' },
+        ["QB", "RB", "WR", "TE"].map(pos => {
+          const players = activeTeam.byPos[pos] || [];
+          const teamRank = posRankings[activeTeam.id]?.[pos];
+          return e('div', { key: pos, className: 'dd-pos-col col-' + pos },
+            e('div', { className: 'dd-pos-head' },
+              e('span', null, pos + ' Rank'),
+              e('span', { className: 'dd-pos-rank' }, teamRank || '—')
+            ),
+            e('div', { className: 'dd-pos-body' },
+              players.length === 0
+                ? e('div', { style: { padding: '12px', color: 'var(--ink-3)', fontSize: '12px' } }, 'No players')
+                : players.map((p, i) => {
+                    const lgRank = leaguePosRanks[p.id];
+                    const totalAtPos = Object.values(leaguePosRanks).filter((_, idx) => true).length;
+                    // We don't know total per-pos cleanly here; use tier on percentile vs starter cutoff
+                    const cls = !lgRank ? 'rk-bad' :
+                      lgRank <= (pos === 'TE' ? 12 : pos === 'QB' ? 12 : 24) ? 'rk-good' :
+                      lgRank <= (pos === 'TE' ? 24 : pos === 'QB' ? 24 : 48) ? 'rk-mid' : 'rk-bad';
+                    return e('div', { key: p.id, className: 'dd-pos-row' },
+                      e(PlayerAvatar, { pid: p.id, name: p.name }),
+                      e('div', { className: 'dd-pos-name' }, p.name),
+                      e('div', { className: 'dd-pos-val' }, fmt(p.value)),
+                      e('div', { className: 'dd-pos-rk-pill ' + cls }, lgRank || '—')
+                    );
+                  })
             )
-          ),
-          e('div', { className: 'dd-detail-section' },
-            e('h3', null, 'DRAFT CAPITAL'),
-            e('div', { className: 'dd-picks' },
-              activeTeam.picks.length === 0 && e('div', { className: 'dd-empty' }, 'No future picks tracked'),
-              activeTeam.picks.map((p, i) => e('div', { key: i, className: 'dd-pick-row' },
-                e('span', null, p.label),
-                e('span', { className: 'dd-pval' }, fmt(p.value))
-              ))
+          );
+        }).concat([
+          e('div', { key: 'PICKS', className: 'dd-pos-col col-PICKS' },
+            e('div', { className: 'dd-pos-head' },
+              e('span', null, 'PICKS'),
+              e('span', { className: 'dd-pos-rank' }, posRankings[activeTeam.id]?.PICKS || '—')
+            ),
+            e('div', { className: 'dd-pos-body' },
+              activeTeam.picks.length === 0
+                ? e('div', { style: { padding: '12px', color: 'var(--ink-3)', fontSize: '12px' } }, 'No future picks')
+                : activeTeam.picks.map((p, i) => e('div', { key: i, className: 'dd-pick-row' },
+                    e('span', { className: 'dd-pick-icon' }, '🎟️'),
+                    e('span', { className: 'dd-pos-name' }, p.label),
+                    e('span', { className: 'dd-pos-val' }, fmt(p.value))
+                  ))
             )
           )
-        )
+        ])
       )
     ),
     !league && !loading && e('div', { className: 'dd-empty-state' },
-      e('p', null, 'Plug in a Sleeper league ID and hit ANALYZE. Your league (1180088667355451392) is pre-loaded.'),
-      e('p', { className: 'dim' }, 'First load fetches ~5MB of Sleeper player metadata + KTC values. Takes 5–15 seconds. Click any team card to drill into roster, lineup, and picks.')
+      e('p', null, 'Plug in a Sleeper league ID and hit Analyze. Your league (1180088667355451392) is pre-loaded.'),
+      e('p', { className: 'dim' }, 'First load fetches ~5MB of Sleeper player metadata + KTC values. Takes 5–15 seconds. Click any team row to see its roster strip and position breakdown.')
     )
   );
 }
