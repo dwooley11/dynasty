@@ -586,17 +586,46 @@ function DynastyAnalyzer() {
     setLeague(null); setRosters([]); setUsers([]); setValueMap({});
     try {
       setStage("Pulling league settings…");
-      const lg = await fetch(`https://api.sleeper.app/v1/league/${leagueId}`).then(r => {
+      let lg = await fetch(`https://api.sleeper.app/v1/league/${leagueId}`).then(r => {
         if (!r.ok) throw new Error("League not found — check the ID");
         return r.json();
       });
+
+      let activeLeagueId = leagueId;
+      if (lg.status === 'complete') {
+        setStage("Finding current season league…");
+        try {
+          const seedUsers = await fetch(`https://api.sleeper.app/v1/league/${activeLeagueId}/users`).then(r => r.json());
+          const seedUser = (seedUsers || [])[0];
+          const calendarYear = new Date().getFullYear();
+          const candidateSeasons = [parseInt(lg.season, 10) + 1, calendarYear, calendarYear + 1]
+            .filter((v, i, a) => v && a.indexOf(v) === i);
+          let visited = new Set([activeLeagueId]);
+          let advanced = true;
+          while (advanced && seedUser) {
+            advanced = false;
+            for (const yr of candidateSeasons) {
+              const userLeagues = await fetch(`https://api.sleeper.app/v1/user/${seedUser.user_id}/leagues/nfl/${yr}`)
+                .then(r => r.ok ? r.json() : []).catch(() => []);
+              const next = (userLeagues || []).find(l => l.previous_league_id === activeLeagueId && !visited.has(l.league_id));
+              if (next) {
+                activeLeagueId = next.league_id;
+                visited.add(activeLeagueId);
+                lg = next;
+                advanced = true;
+                break;
+              }
+            }
+          }
+        } catch (e) { /* fall back to original league */ }
+      }
       setLeague(lg);
 
       setStage("Pulling rosters & users…");
       const [rs, us, picks] = await Promise.all([
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`).then(r => r.json()),
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`).then(r => r.json()),
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/traded_picks`)
+        fetch(`https://api.sleeper.app/v1/league/${activeLeagueId}/rosters`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${activeLeagueId}/users`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${activeLeagueId}/traded_picks`)
           .then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
       setRosters(rs || []); setUsers(us || []); setTradedPicks(picks || []);
