@@ -267,10 +267,15 @@ body {
 .dd-rank-team-name { font-size: 14px; font-weight: 700; line-height: 1.2; }
 .dd-rank-team-owner { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
 
+.dd-bar-track {
+  width: 100%;
+  display: flex; align-items: center;
+}
 .dd-bar-stack {
   display: flex; height: 14px; border-radius: 999px; overflow: hidden;
   background: var(--bg-3);
   width: 100%;
+  transition: width 0.2s ease;
 }
 .dd-bar-seg {
   height: 100%;
@@ -897,7 +902,9 @@ function DynastyAnalyzer() {
         )
       ),
       e('div', { className: 'dd-rank-list' },
-        teamCards.map((t, i) => {
+        (() => {
+          const maxCombinedValue = Math.max(...teamCards.map(t => t.combinedValue || 0), 1);
+          return teamCards.map((t, i) => {
           const rank = i + 1;
           const tier = tierFor(rank, totalTeams);
           const total = (t.posValues.QB || 0) + (t.posValues.RB || 0) +
@@ -907,6 +914,7 @@ function DynastyAnalyzer() {
             pos, pct: ((t.posValues[pos] || 0) / total) * 100,
             rank: posRankings[t.id]?.[pos]
           }));
+          const barWidthPct = ((t.combinedValue || 0) / maxCombinedValue) * 100;
           return e('button', {
             key: t.id,
             onClick: () => setActiveTeamId(t.id),
@@ -917,13 +925,15 @@ function DynastyAnalyzer() {
               e('div', { className: 'dd-rank-team-name' }, t.teamName),
               e('div', { className: 'dd-rank-team-owner' }, '@' + t.owner)
             ),
-            e('div', { className: 'dd-bar-stack' },
-              segs.map(s => s.pct > 0 && e('div', {
-                key: s.pos,
-                className: 'dd-bar-seg',
-                style: { width: s.pct + '%', background: POS_COLORS[s.pos].hex },
-                title: `${s.pos}: ${fmt(t.posValues[s.pos] || 0)} (rank ${s.rank}/${totalTeams})`
-              }, s.pct > 6 ? (s.rank || '') : ''))
+            e('div', { className: 'dd-bar-track' },
+              e('div', { className: 'dd-bar-stack', style: { width: barWidthPct + '%' } },
+                segs.map(s => s.pct > 0 && e('div', {
+                  key: s.pos,
+                  className: 'dd-bar-seg',
+                  style: { width: s.pct + '%', background: POS_COLORS[s.pos].hex },
+                  title: `${s.pos}: ${fmt(t.posValues[s.pos] || 0)} (rank ${s.rank}/${totalTeams})`
+                }, s.pct > 6 ? (s.rank || '') : ''))
+              )
             ),
             e('div', { className: 'dd-rank-stats' },
               e('span', null,
@@ -946,7 +956,8 @@ function DynastyAnalyzer() {
                 tier.label)
             )
           );
-        })
+        });
+        })()
       ),
 
       // Position breakdown columns
