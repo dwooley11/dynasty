@@ -564,7 +564,7 @@ function PlayerAvatar({ pid, name }) {
 }
 
 function DynastyAnalyzer() {
-  const [leagueId, setLeagueId] = useState("1180088667355451392");
+  const [leagueId, setLeagueId] = useState("1333903140252041216");
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
@@ -1010,7 +1010,7 @@ function DynastyAnalyzer() {
       )
     ),
     !league && !loading && e('div', { className: 'dd-empty-state' },
-      e('p', null, 'Plug in a Sleeper league ID and hit Analyze. Your league (1180088667355451392) is pre-loaded.'),
+      e('p', null, 'Plug in a Sleeper league ID and hit Analyze. Your league (1333903140252041216) is pre-loaded.'),
       e('p', { className: 'dim' }, 'First load fetches ~5MB of Sleeper player metadata + KTC values. Takes 5–15 seconds. Click any team row to see its roster strip and position breakdown.')
     )
   );
