@@ -627,35 +627,76 @@ function DynastyAnalyzer() {
     }
   }
 
-  async function loadValues(players, sf) {
-    try {
-      const url = sf
-        ? "https://keeptradecut.com/dynasty-rankings/rankings.json?format=2&filter=all"
-        : "https://keeptradecut.com/dynasty-rankings/rankings.json?format=1&filter=all";
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const map = mergeValues(players, data, "ktc");
-        if (Object.values(map).some(p => p.value > 0)) {
-          return { map, source: "KeepTradeCut" };
+  async function fetchKtcPlayersArray() {
+    // KTC embeds the live rankings as `var playersArray = [...]` inside the
+    // /dynasty-rankings HTML page. There's no public JSON API, and the page
+    // blocks cross-origin fetches, so we go through a CORS proxy chain.
+    const target = "https://keeptradecut.com/dynasty-rankings/";
+    const proxies = [
+      (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+      (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      (u) => `https://cors.eu.org/${u}`
+    ];
+    for (const make of proxies) {
+      try {
+        const res = await fetch(make(target));
+        if (!res.ok) continue;
+        const html = await res.text();
+        const idx = html.indexOf("var playersArray");
+        if (idx < 0) continue;
+        const start = html.indexOf("[", idx);
+        if (start < 0) continue;
+        // Walk bracket depth so we don't trip on `]` inside string values.
+        let depth = 0, inStr = null, esc = false, end = -1;
+        for (let i = start; i < html.length; i++) {
+          const c = html[i];
+          if (esc) { esc = false; continue; }
+          if (inStr) {
+            if (c === "\\") { esc = true; continue; }
+            if (c === inStr) inStr = null;
+            continue;
+          }
+          if (c === '"' || c === "'") { inStr = c; continue; }
+          if (c === "[") depth++;
+          else if (c === "]") { depth--; if (depth === 0) { end = i; break; } }
         }
+        if (end < 0) continue;
+        const literal = html.slice(start, end + 1);
+        let data;
+        try { data = JSON.parse(literal); }
+        catch (_) { data = Function('"use strict"; return (' + literal + ')')(); }
+        if (Array.isArray(data) && data.length > 100) return data;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  async function loadValues(players, sf) {
+    const ktcData = await fetchKtcPlayersArray();
+    if (ktcData) {
+      const map = mergeValues(players, ktcData, "ktc", sf);
+      if (Object.values(map).some(p => p.value > 0)) {
+        return { map, source: "KeepTradeCut (live)" };
       }
-    } catch (_) {}
+    }
     try {
       const res = await fetch(`https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${sf ? 2 : 1}&numTeams=12&ppr=1`);
       const data = await res.json();
-      const map = mergeValues(players, data, "fc");
-      return { map, source: "FantasyCalc (KTC blocked CORS)" };
+      const map = mergeValues(players, data, "fc", sf);
+      return { map, source: "FantasyCalc (KTC unreachable)" };
     } catch (e2) {
       throw new Error("Couldn't load player values from KTC or FantasyCalc.");
     }
   }
 
-  function mergeValues(players, valueData, source) {
+  function mergeValues(players, valueData, source, sf) {
     const byName = {};
     if (source === "ktc") {
       for (const row of valueData || []) {
-        const v = row.superflexValues?.value || row.oneQBValues?.value;
+        const v = sf
+          ? (row.superflexValues?.value ?? row.oneQBValues?.value)
+          : (row.oneQBValues?.value ?? row.superflexValues?.value);
         if (!v) continue;
         byName[normName(row.playerName)] = { value: v, position: row.position, name: row.playerName };
       }
