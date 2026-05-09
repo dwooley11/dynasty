@@ -703,7 +703,8 @@ function DynastyAnalyzer() {
 
   const teamCards = useMemo(() => {
     if (!league || !rosters.length || !Object.keys(valueMap).length) return [];
-    const currentSeason = parseInt(league.season || "2026", 10);
+    const leagueSeason = parseInt(league.season || `${new Date().getFullYear()}`, 10);
+    const currentSeason = league.status === 'complete' ? leagueSeason + 1 : leagueSeason;
     const sf = isSuperflex;
 
     function picksForRoster(rosterId) {
@@ -829,7 +830,7 @@ function DynastyAnalyzer() {
       ),
       e('div', null,
         e('span', { className: 'dd-meta-k' }, 'Season'),
-        e('span', { className: 'dd-meta-v' }, league.season + (league.status === 'complete' ? ' (complete)' : ''))
+        e('span', { className: 'dd-meta-v' }, (league.status === 'complete' ? (parseInt(league.season, 10) + 1) + ` (${league.season} complete)` : league.season))
       ),
       e('div', null,
         e('span', { className: 'dd-meta-k' }, 'Format'),
