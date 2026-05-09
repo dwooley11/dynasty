@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dynasty League Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0d10;
+  --bg-2: #14161b;
+  --bg-3: #1c1f26;
+  --line: #2a2e38;
+  --ink: #e8e9ec;
+  --ink-2: #9499a3;
+  --ink-3: #5b6068;
+  --accent-gold: #d4a04a;
+  --accent-electric: #5fb8ff;
+  --accent-cyan: #4fd1c5;
+  --accent-rust: #c9573a;
+  --accent-red: #e25555;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  letter-spacing: 0.01em;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(95,184,255,0.06), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(212,160,74,0.05), transparent 40%);
+}
+.dd-root { padding: 24px; }
+.dd-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px; margin-bottom: 24px;
+  gap: 16px; flex-wrap: wrap;
+}
+.dd-brand { display: flex; align-items: center; gap: 14px; }
+.dd-brand-mark {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-rust));
+  display: grid; place-items: center;
+  font-size: 22px; color: #000; border-radius: 2px;
+}
+.dd-brand-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; letter-spacing: 0.08em; line-height: 1;
+}
+.dd-brand-sub {
+  font-size: 11px; color: var(--ink-2);
+  text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px;
+}
+.dd-controls { display: flex; gap: 8px; }
+.dd-input {
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--ink); padding: 10px 14px;
+  font-family: inherit; font-size: 13px;
+  width: 240px; letter-spacing: 0.05em;
+}
+.dd-input:focus { outline: none; border-color: var(--accent-gold); }
+.dd-btn {
+  background: var(--accent-gold); color: #000; border: none;
+  padding: 10px 22px; font-family: inherit;
+  font-weight: 700; font-size: 12px;
+  letter-spacing: 0.15em; cursor: pointer;
+  transition: background 0.15s;
+}
+.dd-btn:hover { background: #e8b658; }
+.dd-btn:disabled { background: var(--ink-3); cursor: wait; }
+.dd-status {
+  background: var(--bg-2);
+  border-left: 2px solid var(--accent-electric);
+  padding: 10px 14px; font-size: 12px;
+  color: var(--ink-2); margin-bottom: 16px;
+  letter-spacing: 0.1em;
+}
+.dd-error {
+  background: rgba(226,85,85,0.1);
+  border-left: 2px solid var(--accent-red);
+  padding: 10px 14px; font-size: 13px;
+  color: #ffb0b0; margin-bottom: 16px;
+}
+.dd-meta {
+  display: flex; flex-wrap: wrap; gap: 28px;
+  padding: 14px 18px; background: var(--bg-2);
+  border: 1px solid var(--line); margin-bottom: 28px;
+}
+.dd-meta-k {
+  font-size: 10px; color: var(--ink-3);
+  letter-spacing: 0.18em; margin-right: 8px;
+}
+.dd-meta-v { font-size: 13px; font-weight: 600; }
+.dd-section {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 0.12em;
+  margin: 0 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+}
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px; margin-bottom: 32px;
+}
+.dd-card {
+  text-align: left; background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--card-accent);
+  color: var(--ink); font-family: inherit;
+  padding: 0; cursor: pointer; display: flex;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.dd-card:hover { transform: translateY(-2px); border-color: var(--card-accent); }
+.dd-card.active {
+  background: var(--bg-3); border-color: var(--card-accent);
+  box-shadow: 0 0 0 1px var(--card-accent);
+}
+.dd-card-rank {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px; color: var(--card-accent);
+  padding: 14px 12px 0 14px; line-height: 1; min-width: 60px;
+}
+.dd-card-body { flex: 1; padding: 14px 14px 14px 0; }
+.dd-card-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+.dd-card-owner { font-size: 11px; color: var(--ink-3); margin-bottom: 8px; }
+.dd-card-label {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.18em; background: var(--card-accent);
+  color: #000; padding: 3px 8px; margin-bottom: 8px;
+}
+.dd-card-blurb {
+  font-size: 11px; color: var(--ink-2);
+  margin-bottom: 12px; min-height: 30px;
+}
+.dd-card-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px 16px; margin-bottom: 8px;
+}
+.dd-card-stats > div {
+  display: flex; justify-content: space-between;
+  font-size: 11px; border-bottom: 1px dotted var(--line);
+  padding-bottom: 2px;
+}
+.dd-card-stats span { color: var(--ink-3); letter-spacing: 0.1em; }
+.dd-card-stats strong { color: var(--ink); }
+.dd-bar { height: 2px; background: var(--line); margin-top: 6px; }
+.dd-bar-fill { height: 100%; background: var(--card-accent); transition: width 0.4s; }
+.dd-detail {
+  background: var(--bg-2); border: 1px solid var(--line);
+  padding: 24px; margin-bottom: 32px;
+}
+.dd-detail-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.dd-detail-team {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px; letter-spacing: 0.05em;
+}
+.dd-detail-owner { font-size: 11px; color: var(--ink-3); }
+.dd-detail-label {
+  color: #000; padding: 8px 16px;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.18em;
+}
+.dd-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.dd-detail-section h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px; letter-spacing: 0.18em;
+  color: var(--ink-2); margin: 0 0 10px;
+  padding-bottom: 6px; border-bottom: 1px dotted var(--line);
+}
+.dd-lineup-row, .dd-roster-row, .dd-pick-row {
+  display: grid; gap: 10px; padding: 6px 0;
+  font-size: 12px; border-bottom: 1px dotted var(--line);
+  align-items: baseline;
+}
+.dd-lineup-row { grid-template-columns: 70px 1fr auto; }
+.dd-roster-row { grid-template-columns: 40px 1fr auto auto; }
+.dd-pick-row { grid-template-columns: 1fr auto; }
+.dd-slot, .dd-pos {
+  font-size: 10px; color: var(--ink-3);
+  letter-spacing: 0.12em; font-weight: 700;
+}
+.dd-lineup-name em {
+  font-style: normal; color: var(--ink-3);
+  margin-left: 6px; font-size: 10px;
+}
+.dd-lineup-val, .dd-pval {
+  color: var(--accent-gold); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.dd-page { color: var(--ink-3); font-size: 11px; }
+.dd-empty { color: var(--ink-3); font-style: italic; }
+.dd-roster, .dd-lineup, .dd-picks { max-height: 420px; overflow-y: auto; }
+.dd-empty-state { text-align: center; padding: 60px 20px; color: var(--ink-2); }
+.dd-empty-state .dim { color: var(--ink-3); font-size: 12px; margin-top: 8px; }
+
+@media (max-width: 920px) {
+  .dd-detail-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .dd-header { flex-direction: column; align-items: stretch; }
+  .dd-controls { width: 100%; }
+  .dd-input { flex: 1; width: auto; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client"
+  }
+}
+</script>
+
+<script type="module">
+import React, { useState, useMemo } from "react";
+import { createRoot } from "react-dom/client";
+
+const e = React.createElement;
+const fmt = (n) => (typeof n === "number" ? Math.round(n).toLocaleString() : "—");
+
+function rebuildScore(age, pos) {
+  if (!age) return 0.5;
+  const peakByPos = { QB: 30, RB: 25, WR: 27, TE: 28 };
+  const peak = peakByPos[pos] || 27;
+  if (age <= peak - 4) return 0.95;
+  if (age <= peak - 2) return 0.8;
+  if (age <= peak) return 0.6;
+  if (age <= peak + 2) return 0.4;
+  if (age <= peak + 4) return 0.2;
+  return 0.05;
+}
+
+function normName(s) {
+  return (s || "").toLowerCase()
+    .replace(/[^a-z0-9 ]/g, "")
+    .replace(/\b(jr|sr|ii|iii|iv)\b/g, "")
+    .replace(/\s+/g, " ").trim();
+}
+
+function slotMatches(slot, pos) {
+  if (!pos) return false;
+  if (slot === pos) return true;
+  if (slot === "FLEX") return ["RB", "WR", "TE"].includes(pos);
+  if (slot === "SUPER_FLEX" || slot === "SUPERFLEX")
+    return ["QB", "RB", "WR", "TE"].includes(pos);
+  if (slot === "REC_FLEX") return ["WR", "TE"].includes(pos);
+  if (slot === "WRRB_FLEX" || slot === "WRRB") return ["RB", "WR"].includes(pos);
+  return false;
+}
+
+function pickStarters(playerIds, valueMap, rosterPositions) {
+  const slots = (rosterPositions || []).filter(
+    (p) => p !== "BN" && p !== "TAXI" && p !== "IR"
+  );
+  const pool = playerIds.map((id) => valueMap[id]).filter(Boolean)
+    .sort((a, b) => b.value - a.value);
+  const used = new Set();
+  const starters = [];
+  let totalStarterValue = 0;
+  for (const slot of slots) {
+    let pick = null;
+    for (const p of pool) {
+      if (used.has(p.id)) continue;
+      if (slotMatches(slot, p.position)) { pick = p; break; }
+    }
+    if (pick) {
+      used.add(pick.id);
+      starters.push({ slot, ...pick });
+      totalStarterValue += pick.value;
+    } else {
+      starters.push({ slot, empty: true });
+    }
+  }
+  return { starters, totalStarterValue };
+}
+
+function approxPickValue(season, round, currentSeason, isSF) {
+  const yearsOut = Math.max(0, season - currentSeason);
+  const base = isSF
+    ? { 1: 5500, 2: 2400, 3: 900, 4: 350 }
+    : { 1: 4200, 2: 1700, 3: 600, 4: 200 };
+  const v = base[round] || 100;
+  return Math.round(v * Math.pow(0.85, yearsOut));
+}
+
+function DynastyAnalyzer() {
+  const [leagueId, setLeagueId] = useState("1180088667355451392");
+  const [loading, setLoading] = useState(false);
+  const [stage, setStage] = useState("");
+  const [error, setError] = useState("");
+  const [league, setLeague] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [rosters, setRosters] = useState([]);
+  const [valueMap, setValueMap] = useState({});
+  const [valueSource, setValueSource] = useState("");
+  const [tradedPicks, setTradedPicks] = useState([]);
+  const [activeTeamId, setActiveTeamId] = useState(null);
+
+  const isSuperflex = useMemo(() => {
+    const slots = league?.roster_positions || [];
+    return slots.includes("SUPER_FLEX") || slots.includes("SUPERFLEX");
+  }, [league]);
+
+  async function loadLeague() {
+    setError(""); setLoading(true);
+    setLeague(null); setRosters([]); setUsers([]); setValueMap({});
+    try {
+      setStage("Pulling league settings…");
+      const lg = await fetch(`https://api.sleeper.app/v1/league/${leagueId}`).then(r => {
+        if (!r.ok) throw new Error("League not found — check the ID");
+        return r.json();
+      });
+      setLeague(lg);
+
+      setStage("Pulling rosters & users…");
+      const [rs, us, picks] = await Promise.all([
+        fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${leagueId}/traded_picks`)
+          .then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      setRosters(rs || []); setUsers(us || []); setTradedPicks(picks || []);
+
+      setStage("Pulling Sleeper player metadata (~5MB, one-time)…");
+      const players = await fetch("https://api.sleeper.app/v1/players/nfl").then(r => r.json());
+
+      setStage("Pulling KeepTradeCut dynasty values…");
+      const sf = lg.roster_positions?.includes("SUPER_FLEX") || lg.roster_positions?.includes("SUPERFLEX");
+      const vm = await loadValues(players, sf);
+      setValueMap(vm.map);
+      setValueSource(vm.source);
+
+      const me = (us || []).find(u =>
+        u.display_name?.toLowerCase() === "dwooley9" ||
+        u.display_name?.toLowerCase().includes("dwooley")
+      );
+      if (me) {
+        const myRoster = (rs || []).find(r => r.owner_id === me.user_id);
+        if (myRoster) setActiveTeamId(myRoster.roster_id);
+      }
+      setStage("");
+    } catch (err) {
+      setError(err.message || "Something broke. Check the league ID.");
+      setStage("");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadValues(players, sf) {
+    try {
+      const url = sf
+        ? "https://keeptradecut.com/dynasty-rankings/rankings.json?format=2&filter=all"
+        : "https://keeptradecut.com/dynasty-rankings/rankings.json?format=1&filter=all";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const map = mergeValues(players, data, "ktc");
+        if (Object.values(map).some(p => p.value > 0)) {
+          return { map, source: "KeepTradeCut" };
+        }
+      }
+    } catch (_) {}
+    try {
+      const res = await fetch(`https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${sf ? 2 : 1}&numTeams=12&ppr=1`);
+      const data = await res.json();
+      const map = mergeValues(players, data, "fc");
+      return { map, source: "FantasyCalc (KTC blocked CORS)" };
+    } catch (e2) {
+      throw new Error("Couldn't load player values from KTC or FantasyCalc.");
+    }
+  }
+
+  function mergeValues(players, valueData, source) {
+    const byName = {};
+    if (source === "ktc") {
+      for (const row of valueData || []) {
+        const v = row.superflexValues?.value || row.oneQBValues?.value;
+        if (!v) continue;
+        byName[normName(row.playerName)] = { value: v, position: row.position, name: row.playerName };
+      }
+    } else {
+      const list = valueData?.players || valueData || [];
+      for (const row of list) {
+        const v = row.value;
+        const name = row.player?.name || row.name;
+        const pos = row.player?.position || row.position;
+        if (!v || !name) continue;
+        byName[normName(name)] = { value: v, position: pos, name };
+      }
+    }
+    const map = {};
+    for (const [pid, p] of Object.entries(players || {})) {
+      if (!p?.full_name) continue;
+      const hit = byName[normName(p.full_name)];
+      map[pid] = {
+        id: pid, name: p.full_name, position: p.position,
+        team: p.team, age: p.age,
+        value: hit ? hit.value : 0
+      };
+    }
+    return map;
+  }
+
+  const teamCards = useMemo(() => {
+    if (!league || !rosters.length || !Object.keys(valueMap).length) return [];
+    const currentSeason = parseInt(league.season || "2026", 10);
+    const sf = isSuperflex;
+
+    function picksForRoster(rosterId) {
+      const seasons = [currentSeason + 1, currentSeason + 2];
+      const allPicks = [];
+      for (const s of seasons) {
+        for (let r = 1; r <= 4; r++) {
+          for (const ros of rosters) {
+            allPicks.push({ season: s, round: r, original: ros.roster_id, owner: ros.roster_id });
+          }
+        }
+      }
+      for (const t of tradedPicks) {
+        const pick = allPicks.find(p =>
+          p.season === parseInt(t.season, 10) &&
+          p.round === t.round &&
+          p.original === t.roster_id
+        );
+        if (pick) pick.owner = t.owner_id;
+      }
+      return allPicks.filter(p => p.owner === rosterId).map(p => ({
+        ...p,
+        value: approxPickValue(p.season, p.round, currentSeason, sf),
+        label: `${p.season} R${p.round}${p.original !== rosterId ? " (via trade)" : ""}`
+      }));
+    }
+
+    return rosters.map(r => {
+      const playerIds = r.players || [];
+      const owned = playerIds.map(id => valueMap[id]).filter(p => p && p.value > 0);
+      const totalValue = owned.reduce((a, b) => a + b.value, 0);
+      const ageList = owned.filter(p => p.age);
+      const avgAge = ageList.length ? ageList.reduce((a, b) => a + b.age, 0) / ageList.length : 0;
+      const { starters, totalStarterValue } = pickStarters(playerIds, valueMap, league.roster_positions);
+      const youngScore = owned.reduce(
+        (acc, p) => acc + p.value * rebuildScore(p.age, p.position), 0
+      ) / (totalValue || 1);
+      const picks = picksForRoster(r.roster_id);
+      const pickValue = picks.reduce((a, b) => a + b.value, 0);
+      const user = users.find(u => u.user_id === r.owner_id);
+      return {
+        id: r.roster_id,
+        owner: user?.display_name || `Team ${r.roster_id}`,
+        teamName: user?.metadata?.team_name || user?.display_name || `Team ${r.roster_id}`,
+        totalValue, totalStarterValue, pickValue,
+        combinedValue: totalValue + pickValue,
+        avgAge, youngScore,
+        wins: r.settings?.wins || 0,
+        losses: r.settings?.losses || 0,
+        starters,
+        roster: owned.sort((a, b) => b.value - a.value),
+        picks: picks.sort((a, b) => a.season - b.season || a.round - b.round)
+      };
+    }).sort((a, b) => b.combinedValue - a.combinedValue);
+  }, [league, rosters, users, valueMap, tradedPicks, isSuperflex]);
+
+  const labeledTeams = useMemo(() => {
+    if (!teamCards.length) return [];
+    const values = teamCards.map(t => t.combinedValue);
+    const max = Math.max(...values), min = Math.min(...values);
+    const range = max - min || 1;
+    return teamCards.map(t => {
+      const valuePctile = (t.combinedValue - min) / range;
+      const young = t.youngScore;
+      let label, blurb, accent;
+      if (valuePctile >= 0.66 && young < 0.55) {
+        label = "CONTENDER"; accent = "var(--accent-gold)";
+        blurb = "Win-now roster. Aggressive moves justified.";
+      } else if (valuePctile >= 0.66) {
+        label = "FUTURE KING"; accent = "var(--accent-electric)";
+        blurb = "Top value AND young. Dangerous for years.";
+      } else if (valuePctile <= 0.4 && young >= 0.6) {
+        label = "REBUILDER"; accent = "var(--accent-cyan)";
+        blurb = "Young assets — accumulate picks, play long.";
+      } else if (valuePctile <= 0.4) {
+        label = "PRETENDER"; accent = "var(--accent-rust)";
+        blurb = "Low value, aging core. Sell vets now.";
+      } else if (young >= 0.55) {
+        label = "RISER"; accent = "var(--accent-cyan)";
+        blurb = "Trending up. A piece or two from contending.";
+      } else {
+        label = "PRETENDER"; accent = "var(--accent-rust)";
+        blurb = "Mediocre value, aging core. Pivot soon.";
+      }
+      return { ...t, label, blurb, accent, valuePctile };
+    });
+  }, [teamCards]);
+
+  const activeTeam = labeledTeams.find(t => t.id === activeTeamId);
+
+  return e('div', { className: 'dd-root' },
+    e('header', { className: 'dd-header' },
+      e('div', { className: 'dd-brand' },
+        e('div', { className: 'dd-brand-mark' }, '◆'),
+        e('div', null,
+          e('div', { className: 'dd-brand-title' }, 'DYNASTY LEAGUE ANALYZER'),
+          e('div', { className: 'dd-brand-sub' }, 'Sleeper × KeepTradeCut · Power Rankings & Roster Construction')
+        )
+      ),
+      e('div', { className: 'dd-controls' },
+        e('input', {
+          value: leagueId,
+          onChange: (ev) => setLeagueId(ev.target.value.trim()),
+          placeholder: 'Sleeper League ID',
+          className: 'dd-input'
+        }),
+        e('button', {
+          onClick: loadLeague,
+          disabled: loading,
+          className: 'dd-btn'
+        }, loading ? 'LOADING…' : 'ANALYZE')
+      )
+    ),
+    stage && e('div', { className: 'dd-status' }, '▸ ' + stage),
+    error && e('div', { className: 'dd-error' }, '⚠ ' + error),
+    league && e('div', { className: 'dd-meta' },
+      e('div', null,
+        e('span', { className: 'dd-meta-k' }, 'LEAGUE'),
+        e('span', { className: 'dd-meta-v' }, league.name)
+      ),
+      e('div', null,
+        e('span', { className: 'dd-meta-k' }, 'SEASON'),
+        e('span', { className: 'dd-meta-v' }, league.season + (league.status === 'complete' ? ' (complete)' : ''))
+      ),
+      e('div', null,
+        e('span', { className: 'dd-meta-k' }, 'FORMAT'),
+        e('span', { className: 'dd-meta-v' },
+          (isSuperflex ? 'SUPERFLEX' : '1QB') + ' · ' +
+          (league.scoring_settings?.rec === 1 ? 'PPR'
+            : league.scoring_settings?.rec === 0.5 ? 'Half-PPR' : 'Std')
+        )
+      ),
+      e('div', null,
+        e('span', { className: 'dd-meta-k' }, 'TEAMS'),
+        e('span', { className: 'dd-meta-v' }, rosters.length)
+      ),
+      valueSource && e('div', null,
+        e('span', { className: 'dd-meta-k' }, 'VALUES'),
+        e('span', { className: 'dd-meta-v' }, valueSource)
+      )
+    ),
+    labeledTeams.length > 0 && e(React.Fragment, null,
+      e('h2', { className: 'dd-section' }, 'POWER RANKINGS'),
+      e('div', { className: 'dd-grid' },
+        labeledTeams.map((t, i) => e('button', {
+          key: t.id,
+          onClick: () => setActiveTeamId(t.id),
+          className: 'dd-card' + (activeTeamId === t.id ? ' active' : ''),
+          style: { '--card-accent': t.accent }
+        },
+          e('div', { className: 'dd-card-rank' }, '#' + (i + 1)),
+          e('div', { className: 'dd-card-body' },
+            e('div', { className: 'dd-card-name' }, t.teamName),
+            e('div', { className: 'dd-card-owner' }, '@' + t.owner),
+            e('div', { className: 'dd-card-label' }, t.label),
+            e('div', { className: 'dd-card-blurb' }, t.blurb),
+            e('div', { className: 'dd-card-stats' },
+              e('div', null, e('span', null, 'VALUE'), e('strong', null, fmt(t.combinedValue))),
+              e('div', null, e('span', null, 'STARTERS'), e('strong', null, fmt(t.totalStarterValue))),
+              e('div', null, e('span', null, 'PICKS'), e('strong', null, fmt(t.pickValue))),
+              e('div', null, e('span', null, 'AVG AGE'), e('strong', null, t.avgAge ? t.avgAge.toFixed(1) : '—'))
+            ),
+            e('div', { className: 'dd-bar' },
+              e('div', { className: 'dd-bar-fill', style: { width: (t.valuePctile * 100) + '%' } })
+            )
+          )
+        ))
+      ),
+      activeTeam && e('div', { className: 'dd-detail' },
+        e('div', { className: 'dd-detail-head' },
+          e('div', null,
+            e('div', { className: 'dd-detail-team' }, activeTeam.teamName),
+            e('div', { className: 'dd-detail-owner' }, '@' + activeTeam.owner)
+          ),
+          e('div', { className: 'dd-detail-label', style: { background: activeTeam.accent } }, activeTeam.label)
+        ),
+        e('div', { className: 'dd-detail-grid' },
+          e('div', { className: 'dd-detail-section' },
+            e('h3', null, 'STARTING LINEUP'),
+            e('div', { className: 'dd-lineup' },
+              activeTeam.starters.map((s, i) => e('div', { key: i, className: 'dd-lineup-row' },
+                e('span', { className: 'dd-slot' }, s.slot),
+                s.empty
+                  ? e('span', { className: 'dd-empty' }, '— empty —')
+                  : e(React.Fragment, null,
+                      e('span', { className: 'dd-lineup-name' },
+                        s.name + ' ',
+                        e('em', null, s.position + ' · ' + (s.team || 'FA'))
+                      ),
+                      e('span', { className: 'dd-lineup-val' }, fmt(s.value))
+                    )
+              ))
+            )
+          ),
+          e('div', { className: 'dd-detail-section' },
+            e('h3', null, 'FULL ROSTER (BY VALUE)'),
+            e('div', { className: 'dd-roster' },
+              activeTeam.roster.map(p => e('div', { key: p.id, className: 'dd-roster-row' },
+                e('span', { className: 'dd-pos' }, p.position),
+                e('span', { className: 'dd-pname' }, p.name),
+                e('span', { className: 'dd-page' }, p.age ? (p.age + 'yo') : ''),
+                e('span', { className: 'dd-pval' }, fmt(p.value))
+              ))
+            )
+          ),
+          e('div', { className: 'dd-detail-section' },
+            e('h3', null, 'DRAFT CAPITAL'),
+            e('div', { className: 'dd-picks' },
+              activeTeam.picks.length === 0 && e('div', { className: 'dd-empty' }, 'No future picks tracked'),
+              activeTeam.picks.map((p, i) => e('div', { key: i, className: 'dd-pick-row' },
+                e('span', null, p.label),
+                e('span', { className: 'dd-pval' }, fmt(p.value))
+              ))
+            )
+          )
+        )
+      )
+    ),
+    !league && !loading && e('div', { className: 'dd-empty-state' },
+      e('p', null, 'Plug in a Sleeper league ID and hit ANALYZE. Your league (1180088667355451392) is pre-loaded.'),
+      e('p', { className: 'dim' }, 'First load fetches ~5MB of Sleeper player metadata + KTC values. Takes 5–15 seconds. Click any team card to drill into roster, lineup, and picks.')
+    )
+  );
+}
+
+createRoot(document.getElementById("root")).render(e(DynastyAnalyzer));
+</script>
+</body>
+</html>
