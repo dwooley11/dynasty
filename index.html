@@ -245,7 +245,7 @@ body {
 }
 .dd-rank-row {
   display: grid;
-  grid-template-columns: 60px minmax(160px,1fr) minmax(280px,2fr) auto;
+  grid-template-columns: 60px minmax(160px,1fr) minmax(220px,2fr) 360px;
   gap: 16px;
   align-items: center;
   padding: 14px 18px;
@@ -287,9 +287,15 @@ body {
 .dd-bar-seg:hover { filter: brightness(1.05); }
 
 .dd-rank-stats {
-  display: flex; gap: 14px; align-items: center;
+  display: grid;
+  grid-template-columns: 78px 96px 78px 84px;
+  gap: 12px; align-items: center;
   font-size: 11px; color: var(--ink-2);
-  flex-wrap: wrap; justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.dd-rank-stats > span {
+  display: inline-flex; align-items: baseline;
+  white-space: nowrap;
 }
 .dd-rank-stat-k { color: var(--ink-3); margin-right: 4px; }
 .dd-rank-stat-v { color: var(--ink); font-weight: 700; }
@@ -396,17 +402,65 @@ body {
 }
 .dd-empty-state .dim { color: var(--ink-3); font-size: 13px; margin-top: 8px; }
 
+/* Tablet / small laptop: collapse stats below the bar but keep bars left-aligned */
 @media (max-width: 1100px) {
+  .dd-root { padding: 24px 22px; }
   .dd-pos-grid { grid-template-columns: repeat(2, 1fr); }
-  .dd-rank-row { grid-template-columns: 48px 1fr 100%; row-gap: 10px; }
-  .dd-rank-stats { grid-column: 1 / -1; justify-content: flex-start; }
+  .dd-rank-row {
+    grid-template-columns: 48px minmax(140px,1fr) minmax(180px,2fr);
+    row-gap: 10px;
+  }
+  .dd-rank-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: 78px 96px 78px 84px;
+    justify-content: start;
+  }
 }
+/* Phones */
 @media (max-width: 720px) {
-  .dd-root { padding: 18px; }
-  .dd-header { flex-direction: column; align-items: stretch; }
-  .dd-controls { width: 100%; }
-  .dd-input { flex: 1; width: auto; }
-  .dd-pos-grid { grid-template-columns: 1fr; }
+  .dd-root { padding: 14px; }
+  .dd-header {
+    flex-direction: column; align-items: stretch;
+    padding-bottom: 14px; margin-bottom: 16px;
+  }
+  .dd-brand-title { font-size: 22px; }
+  .dd-brand-mark { width: 44px; height: 44px; font-size: 22px; border-radius: 12px; }
+  .dd-controls { width: 100%; flex-wrap: wrap; }
+  .dd-input { flex: 1 1 100%; width: auto; }
+  .dd-btn { flex: 1 1 auto; padding: 11px 16px; }
+  .dd-meta { gap: 14px 22px; padding: 12px 16px; }
+  .dd-pos-grid { grid-template-columns: 1fr; gap: 10px; }
+  .dd-section { font-size: 16px; flex-wrap: wrap; }
+  .dd-section-legend { gap: 8px; }
+  .dd-rank-list { border-radius: 12px; }
+  .dd-rank-row {
+    padding: 12px 14px;
+    gap: 12px;
+    grid-template-columns: 36px minmax(0,1fr);
+    row-gap: 8px;
+  }
+  .dd-rank-num { font-size: 18px; }
+  .dd-rank-team-name { font-size: 13px; }
+  .dd-bar-track { grid-column: 1 / -1; }
+  .dd-rank-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    font-size: 11px;
+  }
+  .dd-rank-tier { justify-self: start; }
+  .dd-strip-wrap { padding: 14px 14px 16px; border-radius: 14px; }
+  .dd-strip-head { flex-wrap: wrap; gap: 8px; }
+  .dd-pchip { flex: 0 0 110px; }
+  .dd-pchip-img-wrap { height: 92px; }
+}
+/* Small phones (iPhone SE / mini) */
+@media (max-width: 380px) {
+  .dd-root { padding: 12px; }
+  .dd-brand { gap: 10px; }
+  .dd-brand-title { font-size: 20px; }
+  .dd-rank-stats { grid-template-columns: 1fr 1fr; }
+  .dd-rank-tier { grid-column: 1 / -1; justify-self: start; }
 }
 </style>
 </head>
