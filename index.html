@@ -633,14 +633,17 @@ function DynastyAnalyzer() {
     // blocks cross-origin fetches, so we go through a CORS proxy chain.
     const target = "https://keeptradecut.com/dynasty-rankings/";
     const proxies = [
-      (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-      (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-      (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-      (u) => `https://cors.eu.org/${u}`
+      { name: "corsproxy.io",   url: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
+      { name: "allorigins.win", url: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
+      { name: "codetabs.com",   url: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
+      { name: "thingproxy",     url: (u) => `https://thingproxy.freeboard.io/fetch/${u}` }
     ];
-    for (const make of proxies) {
+    for (const { name, url: make } of proxies) {
+      setStage(`Pulling KeepTradeCut dynasty values via ${name}…`);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 12000);
       try {
-        const res = await fetch(make(target));
+        const res = await fetch(make(target), { signal: ctrl.signal });
         if (!res.ok) continue;
         const html = await res.text();
         const idx = html.indexOf("var playersArray");
@@ -668,6 +671,7 @@ function DynastyAnalyzer() {
         catch (_) { data = Function('"use strict"; return (' + literal + ')')(); }
         if (Array.isArray(data) && data.length > 100) return data;
       } catch (_) {}
+      finally { clearTimeout(timer); }
     }
     return null;
   }
