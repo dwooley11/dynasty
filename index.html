@@ -90,6 +90,25 @@ body {
 .dd-btn:hover { background: #2a2f3b; }
 .dd-btn:active { transform: translateY(1px); }
 .dd-btn:disabled { background: var(--ink-3); cursor: wait; }
+.dd-src-toggle {
+  display: flex;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.dd-src-btn {
+  padding: 8px 13px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  border: none; border-radius: 7px; cursor: pointer;
+  background: transparent; color: var(--ink-2);
+  white-space: nowrap; transition: background 0.12s, color 0.12s;
+}
+.dd-src-btn.active {
+  background: var(--bg-2); color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}
 .dd-status {
   background: var(--bg-2);
   border-left: 3px solid var(--pos-rb);
@@ -629,6 +648,7 @@ function DynastyAnalyzer() {
   const [valueSource, setValueSource] = useState("");
   const [tradedPicks, setTradedPicks] = useState([]);
   const [activeTeamId, setActiveTeamId] = useState(null);
+  const [rankingSource, setRankingSource] = useState("ktc");
 
   const isSuperflex = useMemo(() => {
     const slots = league?.roster_positions || [];
@@ -658,9 +678,8 @@ function DynastyAnalyzer() {
       setStage("Pulling Sleeper player metadata (~5MB, one-time)…");
       const players = await fetch("https://api.sleeper.app/v1/players/nfl").then(r => r.json());
 
-      setStage("Pulling KeepTradeCut dynasty values…");
       const sf = lg.roster_positions?.includes("SUPER_FLEX") || lg.roster_positions?.includes("SUPERFLEX");
-      const vm = await loadValues(players, sf);
+      const vm = await loadValues(players, sf, rankingSource);
       setValueMap(vm.map);
       setValueSource(vm.source);
 
@@ -730,7 +749,76 @@ function DynastyAnalyzer() {
     return null;
   }
 
-  async function loadValues(players, sf) {
+  async function fetchFlockRankings(sf) {
+    const target = `https://flockfantasy.com/rankings?format=${sf ? 'superflex' : 'oneqb'}`;
+    const proxies = [
+      { name: "corsproxy.io",   url: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
+      { name: "allorigins.win", url: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
+      { name: "codetabs.com",   url: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
+      { name: "thingproxy",     url: (u) => `https://thingproxy.freeboard.io/fetch/${u}` }
+    ];
+    for (const { name, url: make } of proxies) {
+      setStage(`Pulling Flock Fantasy rankings via ${name}…`);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 12000);
+      try {
+        const res = await fetch(make(target), { signal: ctrl.signal });
+        if (!res.ok) continue;
+        const html = await res.text();
+        // Next.js embeds SSR data in <script id="__NEXT_DATA__" type="application/json">
+        const m = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+        if (m) {
+          try {
+            const nd = JSON.parse(m[1]);
+            const rows = findFlockRows(nd);
+            if (rows && rows.length > 50) return rows;
+          } catch (_) {}
+        }
+      } catch (_) {}
+      finally { clearTimeout(timer); }
+    }
+    return null;
+  }
+
+  function findFlockRows(obj, depth = 0) {
+    if (depth > 8 || !obj || typeof obj !== 'object') return null;
+    if (Array.isArray(obj)) {
+      if (obj.length > 50) {
+        const sample = obj[0];
+        if (sample && (sample.playerName || sample.name || sample.player_name || sample.fullName)) return obj;
+      }
+      for (const item of obj) {
+        const found = findFlockRows(item, depth + 1);
+        if (found) return found;
+      }
+      return null;
+    }
+    for (const key of ['rankings', 'players', 'rankedPlayers', 'playerRankings', 'data', 'props', 'pageProps']) {
+      if (obj[key]) {
+        const found = findFlockRows(obj[key], depth + 1);
+        if (found) return found;
+      }
+    }
+    for (const val of Object.values(obj)) {
+      if (val && typeof val === 'object') {
+        const found = findFlockRows(val, depth + 1);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  async function loadValues(players, sf, source) {
+    if (source === 'flock') {
+      const flockData = await fetchFlockRankings(sf);
+      if (flockData) {
+        const map = mergeValues(players, flockData, "flock", sf);
+        if (Object.values(map).some(p => p.value > 0)) {
+          return { map, source: "Flock Fantasy (live)" };
+        }
+      }
+      throw new Error("Couldn't load rankings from Flock Fantasy. The page may require JavaScript rendering.");
+    }
     const ktcData = await fetchKtcPlayersArray();
     if (ktcData) {
       const map = mergeValues(players, ktcData, "ktc", sf);
@@ -757,6 +845,18 @@ function DynastyAnalyzer() {
           : (row.oneQBValues?.value ?? row.superflexValues?.value);
         if (!v) continue;
         byName[normName(row.playerName)] = { value: v, position: row.position, name: row.playerName };
+      }
+    } else if (source === "flock") {
+      const list = valueData || [];
+      for (let i = 0; i < list.length; i++) {
+        const row = list[i];
+        const name = row.playerName || row.name || row.player_name || row.fullName
+                  || row.player?.name || row.player?.fullName;
+        const pos  = row.position || row.pos || row.player?.position;
+        const explicit = row.value || row.tradeValue || row.dynastyValue || row.overallValue;
+        const v = explicit ?? Math.max(1, (list.length - i) * 10);
+        if (!name) continue;
+        byName[normName(name)] = { value: v, position: pos, name };
       }
     } else {
       const list = valueData?.players || valueData || [];
@@ -903,7 +1003,7 @@ function DynastyAnalyzer() {
         e('div', { className: 'dd-brand-mark' }, '🏈'),
         e('div', null,
           e('div', { className: 'dd-brand-title' }, 'Dynasty League Analyzer'),
-          e('div', { className: 'dd-brand-sub' }, 'Sleeper × KeepTradeCut · Power Rankings & Roster Construction')
+          e('div', { className: 'dd-brand-sub' }, 'Sleeper · Power Rankings & Roster Construction')
         )
       ),
       e('div', { className: 'dd-controls' },
@@ -913,6 +1013,16 @@ function DynastyAnalyzer() {
           placeholder: 'Sleeper League ID',
           className: 'dd-input'
         }),
+        e('div', { className: 'dd-src-toggle' },
+          e('button', {
+            className: 'dd-src-btn' + (rankingSource === 'ktc' ? ' active' : ''),
+            onClick: () => setRankingSource('ktc')
+          }, 'KTC'),
+          e('button', {
+            className: 'dd-src-btn' + (rankingSource === 'flock' ? ' active' : ''),
+            onClick: () => setRankingSource('flock')
+          }, 'Flock')
+        ),
         e('button', {
           onClick: loadLeague,
           disabled: loading,
