@@ -920,7 +920,7 @@ function DynastyAnalyzer() {
           : (row.oneQBValues ?? row.superflexValues);
         const v = vals?.value;
         if (!v) continue;
-        byName[normName(row.playerName)] = { value: v, trend: vals?.trend30day ?? null, position: row.position, name: row.playerName };
+        byName[normName(row.playerName)] = { value: v, trend: vals?.trend ?? null, position: row.position, name: row.playerName };
       }
     } else {
       const list = valueData?.players || valueData || [];
@@ -1419,7 +1419,9 @@ function DynastyAnalyzer() {
         filtered = [...filtered].sort((a, b) => {
           const pa = POS_ORDER[a.position] ?? 9, pb = POS_ORDER[b.position] ?? 9;
           if (pa !== pb) return pa - pb;
-          return b.value - a.value;
+          const ra = globalPosRanks[a.id] || 9999;
+          const rb = globalPosRanks[b.id] || 9999;
+          return ra - rb;
         });
       }
       return e(React.Fragment, null,
@@ -1456,7 +1458,7 @@ function DynastyAnalyzer() {
             const posCounters = {};
             return filtered.slice(0, 150).map((p, i) => {
             posCounters[p.position] = (posCounters[p.position] || 0) + 1;
-            const rowNum = faSort === 'rank' && faPos === 'ALL' ? posCounters[p.position] : i + 1;
+            const rowNum = faSort === 'rank' ? (globalPosRanks[p.id] || '?') : i + 1;
             const posRank = globalPosRanks[p.id];
             const isUpgrade = compareRoster && worstStarterByPos[p.position] !== undefined && p.value > worstStarterByPos[p.position];
             const trendVal = p.trend;
