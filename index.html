@@ -934,11 +934,14 @@ function DynastyAnalyzer() {
     for (const [pid, p] of Object.entries(players || {})) {
       if (!p?.full_name) continue;
       const hit = byName[normName(p.full_name)];
+      // Only use hit when positions agree — prevents e.g. "Kenneth Walker" (WR in Sleeper)
+      // from stealing the value of "Kenneth Walker III" (RB) due to suffix stripping
+      const posMatch = !hit?.position || !p.position || hit.position === p.position;
       map[pid] = {
         id: pid, name: p.full_name, position: p.position,
         team: p.team, age: p.age,
-        value: hit ? hit.value : 0,
-        trend: hit?.trend ?? null
+        value: (hit && posMatch) ? hit.value : 0,
+        trend: (hit && posMatch) ? (hit?.trend ?? null) : null
       };
     }
     return map;
