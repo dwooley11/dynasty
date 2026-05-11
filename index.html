@@ -787,7 +787,7 @@ function DynastyAnalyzer() {
   const [pullProgress, setPullProgress] = useState(0);
   const [activeView, setActiveView] = useState('rankings');
   const [faPos, setFaPos] = useState('ALL');
-  const [faSort, setFaSort] = useState('value');
+
   const [compareRoster, setCompareRoster] = useState(false);
   const doLoadRef = useRef(null);
   const leagueRef = useRef(null);
@@ -1414,16 +1414,6 @@ function DynastyAnalyzer() {
     // FA Board view
     activeView === 'fa-board' && league && (() => {
       let filtered = faPos === 'ALL' ? freeAgents : freeAgents.filter(p => p.position === faPos);
-      if (faSort === 'rank') {
-        const POS_ORDER = { QB: 0, RB: 1, WR: 2, TE: 3 };
-        filtered = [...filtered].sort((a, b) => {
-          const pa = POS_ORDER[a.position] ?? 9, pb = POS_ORDER[b.position] ?? 9;
-          if (pa !== pb) return pa - pb;
-          const ra = globalPosRanks[a.id] || 9999;
-          const rb = globalPosRanks[b.id] || 9999;
-          return ra - rb;
-        });
-      }
       return e(React.Fragment, null,
         e('div', { className: 'dd-fa-controls' },
           e('div', { className: 'dd-fa-filter' },
@@ -1432,11 +1422,6 @@ function DynastyAnalyzer() {
             )
           ),
           e('div', { className: 'dd-fa-spacer' }),
-          e('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
-            e('span', { style: { fontSize: '11px', color: 'var(--ink-3)', marginRight: '4px' } }, 'Sort:'),
-            e('button', { className: 'dd-fa-filter-btn' + (faSort === 'value' ? ' active' : ''), onClick: () => setFaSort('value') }, 'Value'),
-            e('button', { className: 'dd-fa-filter-btn' + (faSort === 'rank' ? ' active' : ''), onClick: () => setFaSort('rank') }, 'Pos Rank')
-          ),
           activeTeam && e('button', {
             className: 'dd-fa-compare-btn' + (compareRoster ? ' active' : ''),
             onClick: () => setCompareRoster(c => !c)
@@ -1458,7 +1443,7 @@ function DynastyAnalyzer() {
             const posCounters = {};
             return filtered.slice(0, 150).map((p, i) => {
             posCounters[p.position] = (posCounters[p.position] || 0) + 1;
-            const rowNum = faSort === 'rank' ? (globalPosRanks[p.id] || '?') : i + 1;
+            const rowNum = i + 1;
             const posRank = globalPosRanks[p.id];
             const isUpgrade = compareRoster && worstStarterByPos[p.position] !== undefined && p.value > worstStarterByPos[p.position];
             const trendVal = p.trend;
