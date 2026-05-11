@@ -778,6 +778,7 @@ function DynastyAnalyzer() {
   const [users, setUsers] = useState([]);
   const [rosters, setRosters] = useState([]);
   const [valueMap, setValueMap] = useState({});
+  const [sleeperPlayers, setSleeperPlayers] = useState({});
   const [valueSource, setValueSource] = useState("");
   const [tradedPicks, setTradedPicks] = useState([]);
   const [activeTeamId, setActiveTeamId] = useState(null);
@@ -798,7 +799,7 @@ function DynastyAnalyzer() {
 
   async function loadLeague() {
     setError(""); setLoading(true);
-    setLeague(null); setRosters([]); setUsers([]); setValueMap({});
+    setLeague(null); setRosters([]); setUsers([]); setValueMap({}); setSleeperPlayers({});
     try {
       setStage("Pulling league settings…");
       const lg = await fetch(`https://api.sleeper.app/v1/league/${leagueId}`).then(r => {
@@ -818,6 +819,7 @@ function DynastyAnalyzer() {
 
       setStage("Pulling Sleeper player metadata (~5MB, one-time)…");
       const players = await fetch("https://api.sleeper.app/v1/players/nfl").then(r => r.json());
+      setSleeperPlayers(players);
 
       setStage("Pulling KeepTradeCut dynasty values…");
       const sf = lg.roster_positions?.includes("SUPER_FLEX") || lg.roster_positions?.includes("SUPERFLEX");
@@ -1067,7 +1069,7 @@ function DynastyAnalyzer() {
     if (!Object.keys(valueMap).length) return {};
     const byPos = { QB: [], RB: [], WR: [], TE: [] };
     for (const p of Object.values(valueMap)) {
-      if (byPos[p.position]) byPos[p.position].push(p);
+      if (byPos[p.position] && p.value > 0) byPos[p.position].push(p);
     }
     const ranks = {};
     for (const pos of Object.keys(byPos)) {
@@ -1078,17 +1080,28 @@ function DynastyAnalyzer() {
   }, [valueMap]);
 
   const freeAgents = useMemo(() => {
-    if (!Object.keys(valueMap).length || !rosters.length) return [];
+    if (!Object.keys(sleeperPlayers).length || !rosters.length) return [];
     const rosteredIds = new Set();
     for (const r of rosters) for (const id of (r.players || [])) rosteredIds.add(id);
-    return Object.values(valueMap)
-      .filter(p =>
-        !rosteredIds.has(p.id) &&
-        ['QB','RB','WR','TE'].includes(p.position) &&
-        p.value > 0
-      )
-      .sort((a, b) => b.value - a.value);
-  }, [valueMap, rosters]);
+    const result = [];
+    for (const [pid, p] of Object.entries(sleeperPlayers)) {
+      if (rosteredIds.has(pid)) continue;
+      if (!['QB','RB','WR','TE'].includes(p.position)) continue;
+      if (!p.active) continue;
+      const vm = valueMap[pid] || {};
+      if (!vm.value) continue;
+      result.push({
+        id: pid,
+        name: p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' '),
+        position: p.position,
+        team: p.team || null,
+        age: p.age || null,
+        value: vm.value,
+        trend: vm.trend ?? null,
+      });
+    }
+    return result.sort((a, b) => b.value - a.value);
+  }, [sleeperPlayers, valueMap, rosters]);
 
   const worstStarterByPos = useMemo(() => {
     if (!activeTeam) return {};
@@ -1401,7 +1414,14 @@ function DynastyAnalyzer() {
     // FA Board view
     activeView === 'fa-board' && league && (() => {
       let filtered = faPos === 'ALL' ? freeAgents : freeAgents.filter(p => p.position === faPos);
-      if (faSort === 'rank') filtered = [...filtered].sort((a, b) => (globalPosRanks[a.id] || 9999) - (globalPosRanks[b.id] || 9999));
+      if (faSort === 'rank') {
+        const POS_ORDER = { QB: 0, RB: 1, WR: 2, TE: 3 };
+        filtered = [...filtered].sort((a, b) => {
+          const pa = POS_ORDER[a.position] ?? 9, pb = POS_ORDER[b.position] ?? 9;
+          if (pa !== pb) return pa - pb;
+          return b.value - a.value;
+        });
+      }
       return e(React.Fragment, null,
         e('div', { className: 'dd-fa-controls' },
           e('div', { className: 'dd-fa-filter' },
@@ -1432,14 +1452,18 @@ function DynastyAnalyzer() {
             e('span', { style: { textAlign: 'right' } }, 'Δ 30d'),
             e('span', { style: { textAlign: 'right' } }, 'Pos Rk')
           ),
-          filtered.slice(0, 150).map((p, i) => {
+          (() => {
+            const posCounters = {};
+            return filtered.slice(0, 150).map((p, i) => {
+            posCounters[p.position] = (posCounters[p.position] || 0) + 1;
+            const rowNum = faSort === 'rank' && faPos === 'ALL' ? posCounters[p.position] : i + 1;
             const posRank = globalPosRanks[p.id];
             const isUpgrade = compareRoster && worstStarterByPos[p.position] !== undefined && p.value > worstStarterByPos[p.position];
             const trendVal = p.trend;
             const trendCls = !trendVal || trendVal === 0 ? 'flat' : trendVal > 0 ? 'up' : 'down';
             const trendStr = !trendVal ? '—' : (trendVal > 0 ? '+' : '') + trendVal;
             return e('div', { key: p.id, className: 'dd-fa-row' + (isUpgrade ? ' highlight' : '') },
-              e('span', { className: 'dd-fa-rank' }, i + 1),
+              e('span', { className: 'dd-fa-rank' }, rowNum),
               e('span', { className: 'dd-fa-pos-pill', style: { background: POS_COLORS[p.position]?.hex || '#999' } }, p.position),
               e('div', null,
                 e('div', { className: 'dd-fa-name' }, p.name),
@@ -1449,7 +1473,8 @@ function DynastyAnalyzer() {
               e('span', { className: 'dd-fa-trend ' + trendCls }, trendStr),
               e('span', { className: 'dd-fa-rank', style: { color: 'var(--ink-2)' } }, posRank ? '#' + posRank : '—')
             );
-          })
+          });
+          })()
         )
       );
     })(),
