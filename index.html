@@ -462,6 +462,53 @@ body {
   .dd-rank-stats { grid-template-columns: 1fr 1fr; }
   .dd-rank-tier { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* ========== Sticky compact header ========== */
+.dd-header--sticky {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  align-items: center;
+  padding-bottom: 12px; margin-bottom: 14px;
+  margin-left: -36px; margin-right: -36px;
+  padding-left: 36px; padding-right: 36px;
+}
+.dd-compact-meta { flex: 1; min-width: 0; }
+.dd-compact-league {
+  font-size: 15px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dd-compact-detail { font-size: 11px; color: var(--ink-2); margin-top: 2px; }
+.dd-btn-ghost {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-3); font-size: 12px; padding: 9px 8px;
+  font-family: inherit;
+}
+.dd-btn-ghost:hover { color: var(--ink); }
+
+/* ========== Pull-to-refresh indicator ========== */
+.dd-pull-indicator {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink-3); font-size: 12px; font-weight: 500; overflow: hidden;
+}
+
+/* ========== Position bar tap tooltip ========== */
+.dd-bar-tip {
+  font-size: 11px; font-weight: 600; margin-top: 5px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+
+@media (max-width: 1100px) {
+  .dd-header--sticky { margin-left: -22px; margin-right: -22px; padding-left: 22px; padding-right: 22px; }
+}
+@media (max-width: 720px) {
+  .dd-header--sticky { flex-direction: row; margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
+  .dd-compact-detail { display: none; }
+}
+@media (max-width: 380px) {
+  .dd-header--sticky { margin-left: -12px; margin-right: -12px; padding-left: 12px; padding-right: 12px; }
+}
 </style>
 </head>
 <body>
@@ -477,7 +524,7 @@ body {
 </script>
 
 <script type="module">
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 
 const e = React.createElement;
@@ -584,12 +631,14 @@ function rankClass(rank, total) {
 }
 
 function tierFor(rank, total) {
-  if (rank === 1) return { label: "Juggernaut", cls: "rk-good" };
+  if (rank === 1) return { label: "Dynasty", cls: "rk-good" };
   if (rank <= 3)  return { label: "Contender",  cls: "rk-good" };
   if (rank <= Math.ceil(total / 2)) return { label: "Riser", cls: "rk-mid" };
   if (rank <= total - 2) return { label: "Pretender", cls: "rk-bad" };
   return { label: "Rebuilder", cls: "rk-bad" };
 }
+
+const TIER_BORDER = { 'rk-good': '#117a3a', 'rk-mid': '#8a6b13', 'rk-bad': '#a02828' };
 
 function PlayerImage({ pid, name, position }) {
   const [errored, setErrored] = useState(false);
@@ -629,6 +678,11 @@ function DynastyAnalyzer() {
   const [valueSource, setValueSource] = useState("");
   const [tradedPicks, setTradedPicks] = useState([]);
   const [activeTeamId, setActiveTeamId] = useState(null);
+  const [barTip, setBarTip] = useState(null);
+  const [showChangeInput, setShowChangeInput] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0);
+  const doLoadRef = useRef(null);
+  const leagueRef = useRef(null);
 
   const isSuperflex = useMemo(() => {
     const slots = league?.roster_positions || [];
@@ -897,32 +951,99 @@ function DynastyAnalyzer() {
   const activeTeam = teamCards.find(t => t.id === activeTeamId);
   const activeTeamRank = activeTeam ? teamCards.findIndex(t => t.id === activeTeamId) + 1 : 0;
 
+  doLoadRef.current = loadLeague;
+  leagueRef.current = league;
+
+  useEffect(() => {
+    let startY = 0;
+    const THRESHOLD = 72;
+    function onTouchStart(ev) {
+      if (window.scrollY === 0) startY = ev.touches[0].clientY;
+    }
+    function onTouchMove(ev) {
+      if (!startY) return;
+      const dy = Math.max(0, ev.touches[0].clientY - startY);
+      setPullProgress(Math.min(1, dy / THRESHOLD));
+    }
+    function onTouchEnd(ev) {
+      const dy = startY ? Math.max(0, ev.changedTouches[0].clientY - startY) : 0;
+      startY = 0;
+      setPullProgress(0);
+      if (dy >= THRESHOLD && leagueRef.current) doLoadRef.current?.();
+    }
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onTouchEnd);
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
+
+  const isAnalyzed = !!league;
+  const showCompact = isAnalyzed && !showChangeInput;
+
   return e('div', { className: 'dd-root' },
-    e('header', { className: 'dd-header' },
+    e('header', { className: 'dd-header' + (showCompact ? ' dd-header--sticky' : '') },
       e('div', { className: 'dd-brand' },
-        e('div', { className: 'dd-brand-mark' }, '🏈'),
-        e('div', null,
+        e('div', {
+          className: 'dd-brand-mark',
+          style: showCompact ? { width: '36px', height: '36px', fontSize: '18px', borderRadius: '10px' } : {}
+        }, '🏈'),
+        !showCompact && e('div', null,
           e('div', { className: 'dd-brand-title' }, 'Dynasty League Analyzer'),
           e('div', { className: 'dd-brand-sub' }, 'Sleeper × KeepTradeCut · Power Rankings & Roster Construction')
         )
       ),
+      showCompact && e('div', { className: 'dd-compact-meta' },
+        e('div', { className: 'dd-compact-league' }, league.name),
+        e('div', { className: 'dd-compact-detail' },
+          rosters.length + ' teams · ' + league.season + ' · ' +
+          (isSuperflex ? 'Superflex' : '1QB') + ' · ' +
+          (league.scoring_settings?.rec === 1 ? 'PPR' :
+           league.scoring_settings?.rec === 0.5 ? 'Half-PPR' : 'Std') +
+          (valueSource ? ' · ' + valueSource : '')
+        )
+      ),
       e('div', { className: 'dd-controls' },
-        e('input', {
-          value: leagueId,
-          onChange: (ev) => setLeagueId(ev.target.value.trim()),
-          placeholder: 'Sleeper League ID',
-          className: 'dd-input'
-        }),
-        e('button', {
-          onClick: loadLeague,
-          disabled: loading,
-          className: 'dd-btn'
-        }, loading ? 'Loading…' : 'Analyze')
+        showCompact
+          ? [
+              e('button', { key: 'refresh', className: 'dd-btn', onClick: loadLeague, disabled: loading,
+                            style: { padding: '9px 18px' } },
+                loading ? 'Loading…' : '↻ Refresh'),
+              e('button', { key: 'change', className: 'dd-btn-ghost',
+                            onClick: () => setShowChangeInput(true) }, 'Change')
+            ]
+          : [
+              e('input', {
+                key: 'input',
+                value: leagueId,
+                onChange: (ev) => setLeagueId(ev.target.value.trim()),
+                placeholder: 'Sleeper League ID',
+                className: 'dd-input'
+              }),
+              e('button', {
+                key: 'analyze',
+                onClick: () => { setShowChangeInput(false); loadLeague(); },
+                disabled: loading,
+                className: 'dd-btn'
+              }, loading ? 'Loading…' : 'Analyze'),
+              isAnalyzed && e('button', {
+                key: 'close',
+                className: 'dd-btn-ghost',
+                onClick: () => setShowChangeInput(false)
+              }, '✕')
+            ]
       )
     ),
+    pullProgress > 0 && e('div', {
+      className: 'dd-pull-indicator',
+      style: { height: Math.round(pullProgress * 44) + 'px' }
+    }, pullProgress >= 1 ? '↑ Release to refresh' : '↓ Pull to refresh'),
     stage && e('div', { className: 'dd-status' }, '▸ ' + stage),
     error && e('div', { className: 'dd-error' }, '⚠ ' + error),
-    league && e('div', { className: 'dd-meta' },
+    !showCompact && league && e('div', { className: 'dd-meta' },
       e('div', null,
         e('span', { className: 'dd-meta-k' }, 'League'),
         e('span', { className: 'dd-meta-v' }, league.name)
@@ -1018,14 +1139,19 @@ function DynastyAnalyzer() {
           return e('button', {
             key: t.id,
             onClick: () => setActiveTeamId(t.id),
-            className: 'dd-rank-row' + (activeTeamId === t.id ? ' active' : '')
+            className: 'dd-rank-row' + (activeTeamId === t.id ? ' active' : ''),
+            style: { borderLeft: '4px solid ' + (TIER_BORDER[tier.cls] || 'transparent') }
           },
             e('div', { className: 'dd-rank-num' }, rank),
             e('div', null,
               e('div', { className: 'dd-rank-team-name' }, t.teamName),
               e('div', { className: 'dd-rank-team-owner' }, '@' + t.owner)
             ),
-            e('div', { className: 'dd-bar-track' },
+            e('div', {
+              className: 'dd-bar-track',
+              onClick: (ev) => { ev.stopPropagation(); setBarTip(barTip === t.id ? null : t.id); },
+              style: { cursor: 'pointer' }
+            },
               e('div', { className: 'dd-bar-stack', style: { width: barWidthPct + '%' } },
                 segs.map(s => s.pct > 0 && e('div', {
                   key: s.pos,
@@ -1033,6 +1159,11 @@ function DynastyAnalyzer() {
                   style: { width: s.pct + '%', background: POS_COLORS[s.pos].hex },
                   title: `${s.pos}: ${fmt(t.posValues[s.pos] || 0)} (rank ${s.rank}/${totalTeams})`
                 }, s.pct > 6 ? (s.rank || '') : ''))
+              ),
+              barTip === t.id && e('div', { className: 'dd-bar-tip' },
+                segs.map(s => e('span', { key: s.pos, style: { color: POS_COLORS[s.pos].hex } },
+                  s.pos + ' #' + (s.rank || '?') + '/' + totalTeams
+                ))
               )
             ),
             e('div', { className: 'dd-rank-stats' },
