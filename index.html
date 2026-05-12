@@ -586,7 +586,7 @@ body {
 }
 .dd-fa-thead {
   display: grid;
-  grid-template-columns: 40px 44px minmax(160px,1fr) 90px 90px 72px;
+  grid-template-columns: 40px minmax(160px,1fr) 44px 90px 90px;
   gap: 8px; padding: 8px 16px;
   background: var(--bg-3); border-bottom: 1px solid var(--line);
   font-size: 10px; font-weight: 700;
@@ -595,7 +595,7 @@ body {
 }
 .dd-fa-row {
   display: grid;
-  grid-template-columns: 40px 44px minmax(160px,1fr) 90px 90px 72px;
+  grid-template-columns: 40px minmax(160px,1fr) 44px 90px 90px;
   gap: 8px; padding: 9px 16px;
   border-bottom: 1px solid var(--line-2);
   align-items: center; transition: background 0.1s;
@@ -636,7 +636,7 @@ body {
 
 @media (max-width: 720px) {
   .dd-fa-thead,
-  .dd-fa-row { grid-template-columns: 32px 40px minmax(120px,1fr) 72px 64px; }
+  .dd-fa-row { grid-template-columns: 32px minmax(120px,1fr) 40px 72px 64px; }
   .dd-fa-thead > span:last-child,
   .dd-fa-row > span:last-child { display: none; }
   .dd-tabs { width: 100%; }
@@ -1450,7 +1450,7 @@ function DynastyAnalyzer() {
       e('button', {
         className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
         onClick: () => setActiveView('ktc-rankings')
-      }, 'KTC Rankings')
+      }, 'Player Rankings')
     ),
 
     // Roster strip with headshots
@@ -1651,11 +1651,10 @@ function DynastyAnalyzer() {
         e('div', { className: 'dd-fa-table' },
           e('div', { className: 'dd-fa-thead' },
             e('span', null, '#'),
-            e('span', null, 'Pos'),
             e('span', null, 'Player'),
+            e('span', { style: { textAlign: 'center' } }, 'Pos'),
             e('span', { style: { textAlign: 'right' } }, 'Value'),
-            e('span', { style: { textAlign: 'right' } }, 'Δ 30d'),
-            e('span', { style: { textAlign: 'right' } }, 'Pos Rk')
+            e('span', { style: { textAlign: 'right' } }, 'Trend')
           ),
           (() => {
             const posCounters = {};
@@ -1669,14 +1668,13 @@ function DynastyAnalyzer() {
             const trendStr = !trendVal ? '—' : (trendVal > 0 ? '+' : '') + trendVal;
             return e('div', { key: p.id, className: 'dd-fa-row' + (isUpgrade ? ' highlight' : '') },
               e('span', { className: 'dd-fa-rank' }, rowNum),
-              e('span', { className: 'dd-fa-pos-pill', style: { background: POS_COLORS[p.position]?.hex || '#999' } }, p.position),
               e('div', null,
                 e('div', { className: 'dd-fa-name' }, p.name),
                 e('div', { className: 'dd-fa-detail' }, [p.team || 'FA', p.age ? p.age + ' yrs' : null].filter(Boolean).join(' · '))
               ),
+              e('span', { className: 'dd-fa-pos-pill', style: { background: POS_COLORS[p.position]?.hex || '#999' } }, p.position),
               e('span', { className: 'dd-fa-val' }, fmt(p.value)),
-              e('span', { className: 'dd-fa-trend ' + trendCls }, trendStr),
-              e('span', { className: 'dd-fa-rank', style: { color: 'var(--ink-2)' } }, posRank ? '#' + posRank : '—')
+              e('span', { className: 'dd-fa-trend ' + trendCls }, trendStr)
             );
           });
           })()
