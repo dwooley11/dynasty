@@ -1328,8 +1328,55 @@ function DynastyAnalyzer() {
       )
     ),
 
+    // Username entry — shown when no user has been looked up yet
+    !sleeperUser && !loading && e('div', { className: 'dd-entry-screen' },
+      e('h2', null, 'Enter your Sleeper username'),
+      e('p', null, 'We\'ll load your leagues so you can pick one to analyze.'),
+      e('div', { className: 'dd-entry-row' },
+        e('input', {
+          className: 'dd-input',
+          value: username,
+          onChange: ev => setUsername(ev.target.value),
+          onKeyDown: ev => ev.key === 'Enter' && loadUser(),
+          placeholder: 'Sleeper username',
+          autoFocus: true
+        }),
+        e('button', { className: 'dd-btn', onClick: loadUser, disabled: loading },
+          loading ? 'Loading…' : 'Find Leagues')
+      )
+    ),
+
+    // League picker — shown after username lookup, or when "Change" is clicked
+    sleeperUser && (!league || showChangeInput) && !loading && e('div', { className: 'dd-league-picker' },
+      e('div', { className: 'dd-league-picker-header' },
+        e('h3', null, 'Your Leagues'),
+        e('button', { className: 'dd-btn-ghost', onClick: () => {
+          if (showChangeInput) { setShowChangeInput(false); }
+          else { setSleeperUser(null); setUserLeagues([]); setLeague(null); }
+        }}, showChangeInput ? '✕ Cancel' : '← Change user')
+      ),
+      userLeagues.length === 0
+        ? e('p', { style: { color: 'var(--ink-3)', fontSize: '13px' } }, 'No leagues found for this user.')
+        : e('div', { className: 'dd-league-grid' },
+            userLeagues.map(lg => {
+              const sf = lg.roster_positions?.includes('SUPER_FLEX') || lg.roster_positions?.includes('SUPERFLEX');
+              const rec = lg.scoring_settings?.rec;
+              const scoring = rec === 1 ? 'PPR' : rec === 0.5 ? 'Half-PPR' : 'Std';
+              const fmt2 = (sf ? 'SF' : '1QB') + ' · ' + scoring + ' · ' + (lg.total_rosters || '?') + ' teams';
+              return e('div', {
+                key: lg.league_id,
+                className: 'dd-league-card',
+                onClick: () => loadLeague(lg.league_id)
+              },
+                e('div', { className: 'dd-league-card-name' }, lg.name),
+                e('div', { className: 'dd-league-card-meta' }, lg.season + ' · ' + fmt2)
+              );
+            })
+          )
+    ),
+
     // Tab navigation
-    teamCards.length > 0 && e('div', { className: 'dd-tabs' },
+    !showChangeInput && teamCards.length > 0 && e('div', { className: 'dd-tabs' },
       e('button', { className: 'dd-tab' + (activeView === 'rankings' ? ' active' : ''), onClick: () => setActiveView('rankings') }, 'Power Rankings'),
       e('button', {
         className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
@@ -1338,7 +1385,7 @@ function DynastyAnalyzer() {
     ),
 
     // Roster strip with headshots
-    activeView === 'rankings' && activeTeam && (() => {
+    !showChangeInput && activeView === 'rankings' && activeTeam && (() => {
       const tier = tierFor(activeTeamRank, totalTeams);
       return e('div', { className: 'dd-strip-wrap' },
         e('div', { className: 'dd-strip-head' },
@@ -1378,7 +1425,7 @@ function DynastyAnalyzer() {
       );
     })(),
 
-    activeView === 'rankings' && teamCards.length > 0 && e(React.Fragment, null,
+    !showChangeInput && activeView === 'rankings' && teamCards.length > 0 && e(React.Fragment, null,
       e('h2', { className: 'dd-section' },
         'Power Rankings',
         e('div', { className: 'dd-section-legend' },
@@ -1508,7 +1555,7 @@ function DynastyAnalyzer() {
     ),
 
     // KTC Rankings view
-    activeView === 'ktc-rankings' && league && (() => {
+    !showChangeInput && activeView === 'ktc-rankings' && league && (() => {
       let filtered = ktcRankedPlayers;
       if (ktcPos !== 'ALL') filtered = filtered.filter(p => p.position === ktcPos);
       if (ktcShowAvailable) filtered = filtered.filter(p => !p.roster);
@@ -1584,52 +1631,6 @@ function DynastyAnalyzer() {
       );
     })(),
 
-    // Username entry — shown when no user has been looked up yet
-    !sleeperUser && !loading && e('div', { className: 'dd-entry-screen' },
-      e('h2', null, 'Enter your Sleeper username'),
-      e('p', null, 'We\'ll load your leagues so you can pick one to analyze.'),
-      e('div', { className: 'dd-entry-row' },
-        e('input', {
-          className: 'dd-input',
-          value: username,
-          onChange: ev => setUsername(ev.target.value),
-          onKeyDown: ev => ev.key === 'Enter' && loadUser(),
-          placeholder: 'Sleeper username',
-          autoFocus: true
-        }),
-        e('button', { className: 'dd-btn', onClick: loadUser, disabled: loading },
-          loading ? 'Loading…' : 'Find Leagues')
-      )
-    ),
-
-    // League picker — shown after username lookup, or when "Change" is clicked
-    sleeperUser && (!league || showChangeInput) && !loading && e('div', { className: 'dd-league-picker' },
-      e('div', { className: 'dd-league-picker-header' },
-        e('h3', null, 'Your Leagues'),
-        e('button', { className: 'dd-btn-ghost', onClick: () => {
-          if (showChangeInput) { setShowChangeInput(false); }
-          else { setSleeperUser(null); setUserLeagues([]); setLeague(null); }
-        }}, showChangeInput ? '✕ Cancel' : '← Change user')
-      ),
-      userLeagues.length === 0
-        ? e('p', { style: { color: 'var(--ink-3)', fontSize: '13px' } }, 'No leagues found for this user.')
-        : e('div', { className: 'dd-league-grid' },
-            userLeagues.map(lg => {
-              const sf = lg.roster_positions?.includes('SUPER_FLEX') || lg.roster_positions?.includes('SUPERFLEX');
-              const rec = lg.scoring_settings?.rec;
-              const scoring = rec === 1 ? 'PPR' : rec === 0.5 ? 'Half-PPR' : 'Std';
-              const fmt2 = (sf ? 'SF' : '1QB') + ' · ' + scoring + ' · ' + (lg.total_rosters || '?') + ' teams';
-              return e('div', {
-                key: lg.league_id,
-                className: 'dd-league-card',
-                onClick: () => loadLeague(lg.league_id)
-              },
-                e('div', { className: 'dd-league-card-name' }, lg.name),
-                e('div', { className: 'dd-league-card-meta' }, lg.season + ' · ' + fmt2)
-              );
-            })
-          )
-    )
   );
 }
 
