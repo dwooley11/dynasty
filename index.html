@@ -586,7 +586,7 @@ body {
 }
 .dd-fa-thead {
   display: grid;
-  grid-template-columns: 40px minmax(160px,1fr) 44px 90px 90px;
+  grid-template-columns: 40px 44px minmax(160px,1fr) 44px 80px 80px;
   gap: 8px; padding: 8px 16px;
   background: var(--bg-3); border-bottom: 1px solid var(--line);
   font-size: 10px; font-weight: 700;
@@ -595,11 +595,18 @@ body {
 }
 .dd-fa-row {
   display: grid;
-  grid-template-columns: 40px minmax(160px,1fr) 44px 90px 90px;
+  grid-template-columns: 40px 44px minmax(160px,1fr) 44px 80px 80px;
   gap: 8px; padding: 9px 16px;
   border-bottom: 1px solid var(--line-2);
   align-items: center; transition: background 0.1s;
 }
+.dd-fa-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-3); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--ink-2); flex-shrink: 0;
+}
+.dd-fa-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .dd-fa-row:last-child { border-bottom: none; }
 .dd-fa-row:hover { background: var(--bg-3); }
 .dd-fa-row.highlight { background: #fffbeb; border-left: 3px solid var(--pos-pk); padding-left: 13px; }
@@ -636,9 +643,9 @@ body {
 
 @media (max-width: 720px) {
   .dd-fa-thead,
-  .dd-fa-row { grid-template-columns: 32px minmax(120px,1fr) 40px 72px 64px; }
+  .dd-fa-row { grid-template-columns: 32px 36px minmax(120px,1fr) 40px 64px 60px; }
   .dd-fa-thead > span:last-child,
-  .dd-fa-row > span:last-child { display: none; }
+  .dd-fa-row > *:last-child { display: none; }
   .dd-tabs { width: 100%; }
   .dd-tab { flex: 1; text-align: center; padding: 8px 10px; }
 }
@@ -1651,10 +1658,11 @@ function DynastyAnalyzer() {
         e('div', { className: 'dd-fa-table' },
           e('div', { className: 'dd-fa-thead' },
             e('span', null, '#'),
+            e('span', null, ''),
             e('span', null, 'Player'),
             e('span', { style: { textAlign: 'center' } }, 'Pos'),
             e('span', { style: { textAlign: 'right' } }, 'Value'),
-            e('span', { style: { textAlign: 'right' } }, 'Trend')
+            e('span', { style: { textAlign: 'right' } }, '30d')
           ),
           (() => {
             const posCounters = {};
@@ -1668,6 +1676,7 @@ function DynastyAnalyzer() {
             const trendStr = !trendVal ? '—' : (trendVal > 0 ? '+' : '') + trendVal;
             return e('div', { key: p.id, className: 'dd-fa-row' + (isUpgrade ? ' highlight' : '') },
               e('span', { className: 'dd-fa-rank' }, rowNum),
+              e(KtcAvatar, { pid: p.id, name: p.name }),
               e('div', null,
                 e('div', { className: 'dd-fa-name' }, p.name),
                 e('div', { className: 'dd-fa-detail' }, [p.team || 'FA', p.age ? p.age + ' yrs' : null].filter(Boolean).join(' · '))
