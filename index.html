@@ -393,6 +393,32 @@ body {
   font-size: 14px;
 }
 
+.dd-entry-screen {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 60px 20px 40px;
+}
+.dd-entry-screen h2 { margin: 0 0 6px; font-size: 18px; }
+.dd-entry-screen p { margin: 0 0 24px; color: var(--ink-3); font-size: 13px; }
+.dd-entry-row { display: flex; gap: 8px; }
+.dd-entry-row .dd-input { width: 200px; }
+
+.dd-league-picker { padding: 0; }
+.dd-league-picker-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0 10px;
+}
+.dd-league-picker-header h3 { margin: 0; font-size: 15px; }
+.dd-league-grid { display: flex; flex-direction: column; gap: 8px; }
+.dd-league-card {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px 16px;
+  cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.dd-league-card:hover { border-color: var(--pos-rb); box-shadow: 0 0 0 2px rgba(99,179,237,.15); }
+.dd-league-card-name { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.dd-league-card-meta { font-size: 12px; color: var(--ink-3); }
+
 .dd-empty-state {
   text-align: center; padding: 80px 20px;
   background: var(--bg-2);
@@ -774,7 +800,10 @@ function PlayerAvatar({ pid, name }) {
 }
 
 function DynastyAnalyzer() {
-  const [leagueId, setLeagueId] = useState("1333903140252041216");
+  const [username, setUsername] = useState("dwooley9");
+  const [sleeperUser, setSleeperUser] = useState(null);
+  const [userLeagues, setUserLeagues] = useState([]);
+  const [leagueId, setLeagueId] = useState('');
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
@@ -802,12 +831,16 @@ function DynastyAnalyzer() {
     return slots.includes("SUPER_FLEX") || slots.includes("SUPERFLEX");
   }, [league]);
 
-  async function loadLeague() {
+  async function loadLeague(lid) {
+    const targetId = lid || leagueId;
+    if (lid) setLeagueId(lid);
+    setShowChangeInput(false);
     setError(""); setLoading(true);
     setLeague(null); setRosters([]); setUsers([]); setValueMap({}); setSleeperPlayers({});
+    setActiveTeamId(null); setMyTeamId(null);
     try {
       setStage("Pulling league settings…");
-      const lg = await fetch(`https://api.sleeper.app/v1/league/${leagueId}`).then(r => {
+      const lg = await fetch(`https://api.sleeper.app/v1/league/${targetId}`).then(r => {
         if (!r.ok) throw new Error("League not found — check the ID");
         return r.json();
       });
@@ -815,9 +848,9 @@ function DynastyAnalyzer() {
 
       setStage("Pulling rosters & users…");
       const [rs, us, picks] = await Promise.all([
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/rosters`).then(r => r.json()),
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/users`).then(r => r.json()),
-        fetch(`https://api.sleeper.app/v1/league/${leagueId}/traded_picks`)
+        fetch(`https://api.sleeper.app/v1/league/${targetId}/rosters`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${targetId}/users`).then(r => r.json()),
+        fetch(`https://api.sleeper.app/v1/league/${targetId}/traded_picks`)
           .then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
       setRosters(rs || []); setUsers(us || []); setTradedPicks(picks || []);
@@ -832,12 +865,8 @@ function DynastyAnalyzer() {
       setValueMap(vm.map);
       setValueSource(vm.source);
 
-      const me = (us || []).find(u =>
-        u.display_name?.toLowerCase() === "dwooley9" ||
-        u.display_name?.toLowerCase().includes("dwooley")
-      );
-      if (me) {
-        const myRoster = (rs || []).find(r => r.owner_id === me.user_id);
+      if (sleeperUser) {
+        const myRoster = (rs || []).find(r => r.owner_id === sleeperUser.user_id);
         if (myRoster) {
           setActiveTeamId(myRoster.roster_id);
           setMyTeamId(myRoster.roster_id);
@@ -846,6 +875,39 @@ function DynastyAnalyzer() {
       setStage("");
     } catch (err) {
       setError(err.message || "Something broke. Check the league ID.");
+      setStage("");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUser() {
+    setError(""); setLoading(true);
+    setSleeperUser(null); setUserLeagues([]);
+    try {
+      setStage("Looking up Sleeper user…");
+      const user = await fetch(`https://api.sleeper.app/v1/user/${username.trim()}`).then(r => {
+        if (!r.ok) throw new Error("User not found — check your Sleeper username");
+        return r.json();
+      });
+      if (!user?.user_id) throw new Error("User not found — check your Sleeper username");
+      setSleeperUser(user);
+
+      setStage("Loading your leagues…");
+      const curYear = new Date().getFullYear();
+      const [lgCur, lgPrev] = await Promise.all([
+        fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${curYear}`).then(r => r.json()).catch(() => []),
+        fetch(`https://api.sleeper.app/v1/user/${user.user_id}/leagues/nfl/${curYear - 1}`).then(r => r.json()).catch(() => []),
+      ]);
+      const seen = new Set();
+      const all = [];
+      for (const lg of [...(lgCur || []), ...(lgPrev || [])]) {
+        if (!seen.has(lg.league_id)) { seen.add(lg.league_id); all.push(lg); }
+      }
+      setUserLeagues(all);
+      setStage("");
+    } catch (err) {
+      setError(err.message || "Couldn't find that user.");
       setStage("");
     } finally {
       setLoading(false);
@@ -1180,32 +1242,13 @@ function DynastyAnalyzer() {
       e('div', { className: 'dd-controls' },
         showCompact
           ? [
-              e('button', { key: 'refresh', className: 'dd-btn', onClick: loadLeague, disabled: loading,
+              e('button', { key: 'refresh', className: 'dd-btn', onClick: () => loadLeague(), disabled: loading,
                             style: { padding: '9px 18px' } },
                 loading ? 'Loading…' : '↻ Refresh'),
               e('button', { key: 'change', className: 'dd-btn-ghost',
                             onClick: () => setShowChangeInput(true) }, 'Change')
             ]
-          : [
-              e('input', {
-                key: 'input',
-                value: leagueId,
-                onChange: (ev) => setLeagueId(ev.target.value.trim()),
-                placeholder: 'Sleeper League ID',
-                className: 'dd-input'
-              }),
-              e('button', {
-                key: 'analyze',
-                onClick: () => { setShowChangeInput(false); loadLeague(); },
-                disabled: loading,
-                className: 'dd-btn'
-              }, loading ? 'Loading…' : 'Analyze'),
-              isAnalyzed && e('button', {
-                key: 'close',
-                className: 'dd-btn-ghost',
-                onClick: () => setShowChangeInput(false)
-              }, '✕')
-            ]
+          : null
       )
     ),
     pullProgress > 0 && e('div', {
@@ -1481,9 +1524,51 @@ function DynastyAnalyzer() {
       );
     })(),
 
-    !league && !loading && e('div', { className: 'dd-empty-state' },
-      e('p', null, 'Plug in a Sleeper league ID and hit Analyze. Your league (1333903140252041216) is pre-loaded.'),
-      e('p', { className: 'dim' }, 'First load fetches ~5MB of Sleeper player metadata + KTC values. Takes 5–15 seconds. Click any team row to see its roster strip and position breakdown.')
+    // Username entry — shown when no user has been looked up yet
+    !sleeperUser && !loading && e('div', { className: 'dd-entry-screen' },
+      e('h2', null, 'Enter your Sleeper username'),
+      e('p', null, 'We\'ll load your leagues so you can pick one to analyze.'),
+      e('div', { className: 'dd-entry-row' },
+        e('input', {
+          className: 'dd-input',
+          value: username,
+          onChange: ev => setUsername(ev.target.value),
+          onKeyDown: ev => ev.key === 'Enter' && loadUser(),
+          placeholder: 'Sleeper username',
+          autoFocus: true
+        }),
+        e('button', { className: 'dd-btn', onClick: loadUser, disabled: loading },
+          loading ? 'Loading…' : 'Find Leagues')
+      )
+    ),
+
+    // League picker — shown after username lookup, or when "Change" is clicked
+    sleeperUser && (!league || showChangeInput) && !loading && e('div', { className: 'dd-league-picker' },
+      e('div', { className: 'dd-league-picker-header' },
+        e('h3', null, 'Your Leagues'),
+        e('button', { className: 'dd-btn-ghost', onClick: () => {
+          if (showChangeInput) { setShowChangeInput(false); }
+          else { setSleeperUser(null); setUserLeagues([]); setLeague(null); }
+        }}, showChangeInput ? '✕ Cancel' : '← Change user')
+      ),
+      userLeagues.length === 0
+        ? e('p', { style: { color: 'var(--ink-3)', fontSize: '13px' } }, 'No leagues found for this user.')
+        : e('div', { className: 'dd-league-grid' },
+            userLeagues.map(lg => {
+              const sf = lg.roster_positions?.includes('SUPER_FLEX') || lg.roster_positions?.includes('SUPERFLEX');
+              const rec = lg.scoring_settings?.rec;
+              const scoring = rec === 1 ? 'PPR' : rec === 0.5 ? 'Half-PPR' : 'Std';
+              const fmt2 = (sf ? 'SF' : '1QB') + ' · ' + scoring + ' · ' + (lg.total_rosters || '?') + ' teams';
+              return e('div', {
+                key: lg.league_id,
+                className: 'dd-league-card',
+                onClick: () => loadLeague(lg.league_id)
+              },
+                e('div', { className: 'dd-league-card-name' }, lg.name),
+                e('div', { className: 'dd-league-card-meta' }, lg.season + ' · ' + fmt2)
+              );
+            })
+          )
     )
   );
 }
