@@ -624,6 +624,12 @@ body {
 .dd-ktc-row.my-team:hover { background: #fef3c7; }
 .dd-ktc-row.other-team { opacity: 0.45; }
 .dd-ktc-row.other-team:hover { opacity: 0.75; background: var(--bg-3); }
+.dd-ktc-row.upgrade-available {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  padding-left: 13px;
+}
+.dd-ktc-row.upgrade-available:hover { background: #dcfce7; }
 .dd-ktc-rank {
   font-size: 12px; font-weight: 700; color: var(--ink-3);
   text-align: right; font-variant-numeric: tabular-nums;
@@ -1228,6 +1234,17 @@ function DynastyAnalyzer() {
     return result.sort((a, b) => b.value - a.value).slice(0, 500);
   }, [valueMap, rosters, teamCards, myTeamId]);
 
+  const myTeamMinValueByPosition = useMemo(() => {
+    const mins = {};
+    for (const p of ktcRankedPlayers) {
+      if (!p.roster?.isMyTeam) continue;
+      if (mins[p.position] === undefined || p.value < mins[p.position]) {
+        mins[p.position] = p.value;
+      }
+    }
+    return mins;
+  }, [ktcRankedPlayers]);
+
   doLoadRef.current = loadLeague;
   leagueRef.current = league;
 
@@ -1559,7 +1576,10 @@ function DynastyAnalyzer() {
             : filtered.map((p, i) => {
                 const isMyTeam = p.roster?.isMyTeam;
                 const isOtherTeam = p.roster && !isMyTeam;
-                const rowCls = isMyTeam ? ' my-team' : isOtherTeam ? ' other-team' : '';
+                const isUpgrade = ktcShowAvailable && !p.roster &&
+                  myTeamMinValueByPosition[p.position] !== undefined &&
+                  p.value > myTeamMinValueByPosition[p.position];
+                const rowCls = isMyTeam ? ' my-team' : isOtherTeam ? ' other-team' : isUpgrade ? ' upgrade-available' : '';
                 const statusEl = p.roster
                   ? (isMyTeam
                       ? e('span', { className: 'dd-ktc-status my-team-badge' }, '★ My Team')
