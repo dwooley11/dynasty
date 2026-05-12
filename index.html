@@ -1416,7 +1416,7 @@ function DynastyAnalyzer() {
             ),
             e('div', {
               className: 'dd-bar-track',
-              onClick: (ev) => { ev.stopPropagation(); setBarTip(barTip === t.id ? null : t.id); },
+              onClick: () => setBarTip(barTip === t.id ? null : t.id),
               style: { cursor: 'pointer' }
             },
               e('div', { className: 'dd-bar-stack', style: { width: barWidthPct + '%' } },
