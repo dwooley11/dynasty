@@ -1301,7 +1301,7 @@ function DynastyAnalyzer() {
     }, pullProgress >= 1 ? '↑ Release to refresh' : '↓ Pull to refresh'),
     stage && e('div', { className: 'dd-status' }, '▸ ' + stage),
     error && e('div', { className: 'dd-error' }, '⚠ ' + error),
-    !showCompact && league && e('div', { className: 'dd-meta' },
+    !showCompact && !showChangeInput && league && e('div', { className: 'dd-meta' },
       e('div', null,
         e('span', { className: 'dd-meta-k' }, 'League'),
         e('span', { className: 'dd-meta-v' }, league.name)
@@ -1329,7 +1329,7 @@ function DynastyAnalyzer() {
     ),
 
     // Tab navigation
-    teamCards.length > 0 && e('div', { className: 'dd-tabs' },
+    teamCards.length > 0 && !showChangeInput && e('div', { className: 'dd-tabs' },
       e('button', { className: 'dd-tab' + (activeView === 'rankings' ? ' active' : ''), onClick: () => setActiveView('rankings') }, 'Power Rankings'),
       e('button', {
         className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
@@ -1338,7 +1338,7 @@ function DynastyAnalyzer() {
     ),
 
     // Roster strip with headshots
-    activeView === 'rankings' && activeTeam && (() => {
+    activeView === 'rankings' && activeTeam && !showChangeInput && (() => {
       const tier = tierFor(activeTeamRank, totalTeams);
       return e('div', { className: 'dd-strip-wrap' },
         e('div', { className: 'dd-strip-head' },
@@ -1378,7 +1378,7 @@ function DynastyAnalyzer() {
       );
     })(),
 
-    activeView === 'rankings' && teamCards.length > 0 && e(React.Fragment, null,
+    activeView === 'rankings' && teamCards.length > 0 && !showChangeInput && e(React.Fragment, null,
       e('h2', { className: 'dd-section' },
         'Power Rankings',
         e('div', { className: 'dd-section-legend' },
@@ -1508,7 +1508,7 @@ function DynastyAnalyzer() {
     ),
 
     // KTC Rankings view
-    activeView === 'ktc-rankings' && league && (() => {
+    activeView === 'ktc-rankings' && league && !showChangeInput && (() => {
       let filtered = ktcRankedPlayers;
       if (ktcPos !== 'ALL') filtered = filtered.filter(p => p.position === ktcPos);
       if (ktcShowAvailable) filtered = filtered.filter(p => !p.roster);
