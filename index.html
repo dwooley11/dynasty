@@ -552,105 +552,26 @@ body {
 .dd-tab.active { background: var(--bg-2); color: var(--ink); box-shadow: var(--shadow-sm); }
 .dd-tab:hover:not(.active) { color: var(--ink); }
 
-/* ========== FA Board ========== */
-.dd-fa-controls {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  margin-bottom: 16px;
+@media (max-width: 720px) {
+  .dd-tabs { width: 100%; }
+  .dd-tab { flex: 1; text-align: center; padding: 8px 10px; }
 }
-.dd-fa-filter {
+
+/* ========== KTC Rankings ========== */
+.dd-ktc-filter {
   display: flex; gap: 2px; background: var(--bg-3);
   padding: 3px; border-radius: 10px;
 }
-.dd-fa-filter-btn {
+.dd-ktc-filter-btn {
   padding: 6px 13px; font-size: 12px; font-weight: 700;
   border-radius: 8px; border: none; cursor: pointer;
   background: none; color: var(--ink-2);
   font-family: inherit; transition: background 0.1s, color 0.1s;
   letter-spacing: 0.03em;
 }
-.dd-fa-filter-btn.active { background: var(--bg-2); color: var(--ink); box-shadow: var(--shadow-sm); }
-.dd-fa-filter-btn:hover:not(.active) { color: var(--ink); }
-.dd-fa-spacer { flex: 1; min-width: 8px; }
-.dd-fa-compare-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; font-size: 12px; font-weight: 600;
-  border-radius: 10px; border: 1px solid var(--line);
-  cursor: pointer; background: var(--bg-2); color: var(--ink-2);
-  font-family: inherit; transition: all 0.12s; white-space: nowrap;
-}
-.dd-fa-compare-btn.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
-.dd-fa-table {
-  background: var(--bg-2); border: 1px solid var(--line);
-  border-radius: 16px; overflow: hidden;
-  box-shadow: var(--shadow-sm); margin-bottom: 28px;
-}
-.dd-fa-thead {
-  display: grid;
-  grid-template-columns: 40px 44px minmax(160px,1fr) 44px 80px 80px;
-  gap: 8px; padding: 8px 16px;
-  background: var(--bg-3); border-bottom: 1px solid var(--line);
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--ink-3); align-items: center;
-}
-.dd-fa-row {
-  display: grid;
-  grid-template-columns: 40px 44px minmax(160px,1fr) 44px 80px 80px;
-  gap: 8px; padding: 9px 16px;
-  border-bottom: 1px solid var(--line-2);
-  align-items: center; transition: background 0.1s;
-}
-.dd-fa-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--bg-3); overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: var(--ink-2); flex-shrink: 0;
-}
-.dd-fa-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.dd-fa-row:last-child { border-bottom: none; }
-.dd-fa-row:hover { background: var(--bg-3); }
-.dd-fa-row.highlight { background: #fffbeb; border-left: 3px solid var(--pos-pk); padding-left: 13px; }
-.dd-fa-row.highlight:hover { background: #fef3c7; }
-.dd-fa-rank {
-  font-size: 12px; font-weight: 700; color: var(--ink-3);
-  text-align: right; font-variant-numeric: tabular-nums;
-}
-.dd-fa-pos-pill {
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 6px;
-  color: #fff; letter-spacing: 0.04em;
-}
-.dd-fa-name { font-size: 13px; font-weight: 600; line-height: 1.2; }
-.dd-fa-detail { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
-.dd-fa-val { font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
-.dd-fa-trend { font-size: 12px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
-.dd-fa-trend.up { color: #10b981; }
-.dd-fa-trend.down { color: #ef4444; }
-.dd-fa-trend.flat { color: var(--ink-3); }
-.dd-fa-compare-note {
-  font-size: 12px; color: var(--ink-3);
-  padding: 6px 0; display: flex; align-items: center; gap: 8px;
-}
-.dd-fa-compare-note::before {
-  content: ''; display: inline-block;
-  width: 10px; height: 10px; border-radius: 2px;
-  background: #f59e0b; flex-shrink: 0;
-}
-.dd-fa-no-upgrades {
-  font-size: 12px; color: var(--ink-3); font-style: italic;
-  padding: 10px 0 4px;
-}
-
-@media (max-width: 720px) {
-  .dd-fa-thead,
-  .dd-fa-row { grid-template-columns: 32px 36px minmax(120px,1fr) 40px 64px 60px; }
-  .dd-fa-thead > span:last-child,
-  .dd-fa-row > *:last-child { display: none; }
-  .dd-tabs { width: 100%; }
-  .dd-tab { flex: 1; text-align: center; padding: 8px 10px; }
-}
-
-/* ========== KTC Rankings ========== */
+.dd-ktc-filter-btn.active { background: var(--bg-2); color: var(--ink); box-shadow: var(--shadow-sm); }
+.dd-ktc-filter-btn:hover:not(.active) { color: var(--ink); }
+.dd-ktc-spacer { flex: 1; min-width: 8px; }
 .dd-ktc-controls {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
   margin-bottom: 16px;
@@ -935,9 +856,6 @@ function DynastyAnalyzer() {
   const [showChangeInput, setShowChangeInput] = useState(false);
   const [pullProgress, setPullProgress] = useState(0);
   const [activeView, setActiveView] = useState('rankings');
-  const [faPos, setFaPos] = useState('ALL');
-
-  const [compareRoster, setCompareRoster] = useState(false);
   const [ktcPos, setKtcPos] = useState('ALL');
   const [ktcShowAvailable, setKtcShowAvailable] = useState(false);
   const [ktcShowMyTeam, setKtcShowMyTeam] = useState(false);
@@ -1282,43 +1200,6 @@ function DynastyAnalyzer() {
     return ranks;
   }, [valueMap]);
 
-  const freeAgents = useMemo(() => {
-    if (!Object.keys(sleeperPlayers).length || !rosters.length) return [];
-    const rosteredIds = new Set();
-    for (const r of rosters) for (const id of (r.players || [])) rosteredIds.add(id);
-    const result = [];
-    for (const [pid, p] of Object.entries(sleeperPlayers)) {
-      if (rosteredIds.has(pid)) continue;
-      if (!['QB','RB','WR','TE'].includes(p.position)) continue;
-      if (!p.active) continue;
-      const vm = valueMap[pid] || {};
-      if (!vm.value) continue;
-      result.push({
-        id: pid,
-        name: p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' '),
-        position: p.position,
-        team: p.team || null,
-        age: p.age || null,
-        value: vm.value,
-        trend: vm.trend ?? null,
-      });
-    }
-    return result.sort((a, b) => b.value - a.value);
-  }, [sleeperPlayers, valueMap, rosters]);
-
-  const worstRosterPlayerByPos = useMemo(() => {
-    if (!myTeam) return {};
-    const out = {};
-    for (const pos of ['QB','RB','WR','TE']) {
-      const allAtPos = [
-        ...myTeam.starters.filter(s => !s.empty && s.position === pos),
-        ...myTeam.bench.filter(p => p.position === pos),
-      ];
-      if (allAtPos.length > 0) out[pos] = Math.min(...allAtPos.map(p => p.value));
-    }
-    return out;
-  }, [myTeam]);
-
   const ktcRankedPlayers = useMemo(() => {
     if (!Object.keys(valueMap).length) return [];
     const playerToRoster = {};
@@ -1450,10 +1331,6 @@ function DynastyAnalyzer() {
     // Tab navigation
     teamCards.length > 0 && e('div', { className: 'dd-tabs' },
       e('button', { className: 'dd-tab' + (activeView === 'rankings' ? ' active' : ''), onClick: () => setActiveView('rankings') }, 'Power Rankings'),
-      e('button', {
-        className: 'dd-tab' + (activeView === 'fa-board' ? ' active' : ''),
-        onClick: () => setActiveView('fa-board')
-      }, 'FA Board' + (freeAgents.length ? ' (' + freeAgents.length + ')' : '')),
       e('button', {
         className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
         onClick: () => setActiveView('ktc-rankings')
@@ -1630,67 +1507,6 @@ function DynastyAnalyzer() {
       )
     ),
 
-    // FA Board view
-    activeView === 'fa-board' && league && (() => {
-      let filtered = faPos === 'ALL' ? freeAgents : freeAgents.filter(p => p.position === faPos);
-      const hasUpgrades = compareRoster && myTeam && filtered.slice(0, 150).some(
-        p => worstRosterPlayerByPos[p.position] !== undefined && p.value > worstRosterPlayerByPos[p.position]
-      );
-      return e(React.Fragment, null,
-        e('div', { className: 'dd-fa-controls' },
-          e('div', { className: 'dd-fa-filter' },
-            ['ALL','QB','RB','WR','TE'].map(pos =>
-              e('button', { key: pos, className: 'dd-fa-filter-btn' + (faPos === pos ? ' active' : ''), onClick: () => setFaPos(pos) }, pos)
-            )
-          ),
-          e('div', { className: 'dd-fa-spacer' }),
-          myTeam && e('button', {
-            className: 'dd-fa-compare-btn' + (compareRoster ? ' active' : ''),
-            onClick: () => setCompareRoster(c => !c)
-          }, compareRoster ? '✓ Comparing My Roster' : 'Compare to My Roster')
-        ),
-        compareRoster && myTeam && e('div', { className: 'dd-fa-compare-note' },
-          'Highlighted players are better than your worst roster player at their position'
-        ),
-        compareRoster && myTeam && !hasUpgrades && e('div', { className: 'dd-fa-no-upgrades' },
-          'No upgrade opportunities found — your roster outperforms all available free agents'
-        ),
-        e('div', { className: 'dd-fa-table' },
-          e('div', { className: 'dd-fa-thead' },
-            e('span', null, '#'),
-            e('span', null, ''),
-            e('span', null, 'Player'),
-            e('span', { style: { textAlign: 'center' } }, 'Pos'),
-            e('span', { style: { textAlign: 'right' } }, 'Value'),
-            e('span', { style: { textAlign: 'right' } }, '30d')
-          ),
-          (() => {
-            const posCounters = {};
-            return filtered.slice(0, 150).map((p, i) => {
-            posCounters[p.position] = (posCounters[p.position] || 0) + 1;
-            const rowNum = i + 1;
-            const posRank = globalPosRanks[p.id];
-            const isUpgrade = compareRoster && worstRosterPlayerByPos[p.position] !== undefined && p.value > worstRosterPlayerByPos[p.position];
-            const trendVal = p.trend;
-            const trendCls = !trendVal || trendVal === 0 ? 'flat' : trendVal > 0 ? 'up' : 'down';
-            const trendStr = !trendVal ? '—' : (trendVal > 0 ? '+' : '') + trendVal;
-            return e('div', { key: p.id, className: 'dd-fa-row' + (isUpgrade ? ' highlight' : '') },
-              e('span', { className: 'dd-fa-rank' }, rowNum),
-              e(KtcAvatar, { pid: p.id, name: p.name }),
-              e('div', null,
-                e('div', { className: 'dd-fa-name' }, p.name),
-                e('div', { className: 'dd-fa-detail' }, [p.team || 'FA', p.age ? p.age + ' yrs' : null].filter(Boolean).join(' · '))
-              ),
-              e('span', { className: 'dd-fa-pos-pill', style: { background: POS_COLORS[p.position]?.hex || '#999' } }, p.position),
-              e('span', { className: 'dd-fa-val' }, fmt(p.value)),
-              e('span', { className: 'dd-fa-trend ' + trendCls }, trendStr)
-            );
-          });
-          })()
-        )
-      );
-    })(),
-
     // KTC Rankings view
     activeView === 'ktc-rankings' && league && (() => {
       let filtered = ktcRankedPlayers;
@@ -1703,16 +1519,16 @@ function DynastyAnalyzer() {
       }
       return e(React.Fragment, null,
         e('div', { className: 'dd-ktc-controls' },
-          e('div', { className: 'dd-fa-filter' },
+          e('div', { className: 'dd-ktc-filter' },
             ['ALL', 'QB', 'RB', 'WR', 'TE'].map(pos =>
               e('button', {
                 key: pos,
-                className: 'dd-fa-filter-btn' + (ktcPos === pos ? ' active' : ''),
+                className: 'dd-ktc-filter-btn' + (ktcPos === pos ? ' active' : ''),
                 onClick: () => setKtcPos(pos)
               }, pos)
             )
           ),
-          e('div', { className: 'dd-fa-spacer' }),
+          e('div', { className: 'dd-ktc-spacer' }),
           e('button', {
             className: 'dd-ktc-toggle-btn' + (ktcShowAvailable ? ' active' : ''),
             onClick: () => { setKtcShowAvailable(v => !v); setKtcShowMyTeam(false); }
