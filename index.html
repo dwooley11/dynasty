@@ -603,6 +603,10 @@ body {
   width: 10px; height: 10px; border-radius: 2px;
   background: #f59e0b; flex-shrink: 0;
 }
+.dd-fa-no-upgrades {
+  font-size: 12px; color: var(--ink-3); font-style: italic;
+  padding: 10px 0 4px;
+}
 
 @media (max-width: 720px) {
   .dd-fa-thead,
@@ -782,6 +786,7 @@ function DynastyAnalyzer() {
   const [valueSource, setValueSource] = useState("");
   const [tradedPicks, setTradedPicks] = useState([]);
   const [activeTeamId, setActiveTeamId] = useState(null);
+  const [myTeamId, setMyTeamId] = useState(null);
   const [barTip, setBarTip] = useState(null);
   const [showChangeInput, setShowChangeInput] = useState(false);
   const [pullProgress, setPullProgress] = useState(0);
@@ -833,7 +838,10 @@ function DynastyAnalyzer() {
       );
       if (me) {
         const myRoster = (rs || []).find(r => r.owner_id === me.user_id);
-        if (myRoster) setActiveTeamId(myRoster.roster_id);
+        if (myRoster) {
+          setActiveTeamId(myRoster.roster_id);
+          setMyTeamId(myRoster.roster_id);
+        }
       }
       setStage("");
     } catch (err) {
@@ -1064,6 +1072,7 @@ function DynastyAnalyzer() {
   const totalTeams = teamCards.length;
   const activeTeam = teamCards.find(t => t.id === activeTeamId);
   const activeTeamRank = activeTeam ? teamCards.findIndex(t => t.id === activeTeamId) + 1 : 0;
+  const myTeam = teamCards.find(t => t.id === myTeamId);
 
   const globalPosRanks = useMemo(() => {
     if (!Object.keys(valueMap).length) return {};
@@ -1104,14 +1113,14 @@ function DynastyAnalyzer() {
   }, [sleeperPlayers, valueMap, rosters]);
 
   const worstStarterByPos = useMemo(() => {
-    if (!activeTeam) return {};
+    if (!myTeam) return {};
     const out = {};
     for (const pos of ['QB','RB','WR','TE']) {
-      const starts = activeTeam.starters.filter(s => !s.empty && s.position === pos);
+      const starts = myTeam.starters.filter(s => !s.empty && s.position === pos);
       if (starts.length > 0) out[pos] = Math.min(...starts.map(s => s.value));
     }
     return out;
-  }, [activeTeam]);
+  }, [myTeam]);
 
   doLoadRef.current = loadLeague;
   leagueRef.current = league;
@@ -1414,6 +1423,9 @@ function DynastyAnalyzer() {
     // FA Board view
     activeView === 'fa-board' && league && (() => {
       let filtered = faPos === 'ALL' ? freeAgents : freeAgents.filter(p => p.position === faPos);
+      const hasUpgrades = compareRoster && myTeam && filtered.slice(0, 150).some(
+        p => worstStarterByPos[p.position] !== undefined && p.value > worstStarterByPos[p.position]
+      );
       return e(React.Fragment, null,
         e('div', { className: 'dd-fa-controls' },
           e('div', { className: 'dd-fa-filter' },
@@ -1422,13 +1434,16 @@ function DynastyAnalyzer() {
             )
           ),
           e('div', { className: 'dd-fa-spacer' }),
-          activeTeam && e('button', {
+          myTeam && e('button', {
             className: 'dd-fa-compare-btn' + (compareRoster ? ' active' : ''),
             onClick: () => setCompareRoster(c => !c)
           }, compareRoster ? '✓ Comparing My Roster' : 'Compare to My Roster')
         ),
-        compareRoster && activeTeam && e('div', { className: 'dd-fa-compare-note' },
+        compareRoster && myTeam && e('div', { className: 'dd-fa-compare-note' },
           'Highlighted players are better than your worst starter at their position'
+        ),
+        compareRoster && myTeam && !hasUpgrades && e('div', { className: 'dd-fa-no-upgrades' },
+          'No upgrade opportunities found — your starters outperform all available free agents'
         ),
         e('div', { className: 'dd-fa-table' },
           e('div', { className: 'dd-fa-thead' },
