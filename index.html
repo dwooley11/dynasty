@@ -990,7 +990,7 @@ function DynastyAnalyzer() {
           : (row.oneQBValues ?? row.superflexValues);
         const v = vals?.value;
         if (!v) continue;
-        byName[normName(row.playerName)] = { value: v, trend: vals?.trend ?? null, position: row.position, name: row.playerName };
+        byName[normName(row.playerName)] = { value: v, trend: vals?.overallTrend ?? null, position: row.position, name: row.playerName };
       }
     } else {
       const list = valueData?.players || valueData || [];
@@ -999,7 +999,7 @@ function DynastyAnalyzer() {
         const name = row.player?.name || row.name;
         const pos = row.player?.position || row.position;
         if (!v || !name) continue;
-        byName[normName(name)] = { value: v, position: pos, name };
+        byName[normName(name)] = { value: v, trend: row.trend30Day ?? null, position: pos, name };
       }
     }
     const map = {};
