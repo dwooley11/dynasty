@@ -642,6 +642,101 @@ body {
   .dd-tabs { width: 100%; }
   .dd-tab { flex: 1; text-align: center; padding: 8px 10px; }
 }
+
+/* ========== KTC Rankings ========== */
+.dd-ktc-controls {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px;
+}
+.dd-ktc-search {
+  background: var(--bg-2); border: 1px solid var(--line);
+  color: var(--ink); padding: 8px 14px;
+  font-family: inherit; font-size: 13px;
+  border-radius: 10px; box-shadow: var(--shadow-sm);
+  min-width: 180px; flex: 1 1 auto; max-width: 260px;
+}
+.dd-ktc-search:focus { outline: none; border-color: var(--pos-rb); }
+.dd-ktc-toggle-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600;
+  border-radius: 10px; border: 1px solid var(--line);
+  cursor: pointer; background: var(--bg-2); color: var(--ink-2);
+  font-family: inherit; transition: all 0.12s; white-space: nowrap;
+}
+.dd-ktc-toggle-btn.active { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+.dd-ktc-toggle-btn.active-mine { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.dd-ktc-table {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 16px; overflow: hidden;
+  box-shadow: var(--shadow-sm); margin-bottom: 28px;
+}
+.dd-ktc-thead {
+  display: grid;
+  grid-template-columns: 40px 44px minmax(160px,1fr) 60px 80px minmax(120px,200px);
+  gap: 8px; padding: 8px 16px;
+  background: var(--bg-3); border-bottom: 1px solid var(--line);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); align-items: center;
+}
+.dd-ktc-row {
+  display: grid;
+  grid-template-columns: 40px 44px minmax(160px,1fr) 60px 80px minmax(120px,200px);
+  gap: 8px; padding: 9px 16px;
+  border-bottom: 1px solid var(--line-2);
+  align-items: center; transition: background 0.1s, opacity 0.1s;
+}
+.dd-ktc-row:last-child { border-bottom: none; }
+.dd-ktc-row:hover { background: var(--bg-3); }
+.dd-ktc-row.my-team {
+  background: #fffbeb;
+  border-left: 3px solid var(--pos-pk);
+  padding-left: 13px;
+}
+.dd-ktc-row.my-team:hover { background: #fef3c7; }
+.dd-ktc-row.other-team { opacity: 0.45; }
+.dd-ktc-row.other-team:hover { opacity: 0.75; background: var(--bg-3); }
+.dd-ktc-rank {
+  font-size: 12px; font-weight: 700; color: var(--ink-3);
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.dd-ktc-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg-3);
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--ink-2); overflow: hidden; flex-shrink: 0;
+}
+.dd-ktc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dd-ktc-name { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.dd-ktc-detail { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.dd-ktc-pos-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 6px;
+  color: #fff; letter-spacing: 0.04em;
+}
+.dd-ktc-val {
+  font-size: 13px; font-weight: 700; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dd-ktc-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 999px;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dd-ktc-status.my-team-badge { background: #fef3c7; color: #92400e; }
+.dd-ktc-status.other-team-badge { background: var(--bg-3); color: var(--ink-2); }
+.dd-ktc-status.fa-badge { background: var(--bg-3); color: var(--ink-3); }
+@media (max-width: 720px) {
+  .dd-ktc-thead,
+  .dd-ktc-row {
+    grid-template-columns: 32px 36px minmax(120px,1fr) 48px 68px;
+  }
+  .dd-ktc-thead > span:last-child,
+  .dd-ktc-row > *:last-child { display: none; }
+  .dd-ktc-search { max-width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -799,6 +894,19 @@ function PlayerAvatar({ pid, name }) {
   );
 }
 
+function KtcAvatar({ pid, name }) {
+  const [errored, setErrored] = useState(false);
+  return e('div', { className: 'dd-ktc-avatar' },
+    (!pid || errored)
+      ? initials(name)
+      : e('img', {
+          src: `https://sleepercdn.com/content/nfl/players/thumb/${pid}.jpg`,
+          alt: name,
+          onError: () => setErrored(true)
+        })
+  );
+}
+
 function DynastyAnalyzer() {
   const [username, setUsername] = useState("");
   const [sleeperUser, setSleeperUser] = useState(null);
@@ -823,6 +931,10 @@ function DynastyAnalyzer() {
   const [faPos, setFaPos] = useState('ALL');
 
   const [compareRoster, setCompareRoster] = useState(false);
+  const [ktcPos, setKtcPos] = useState('ALL');
+  const [ktcShowAvailable, setKtcShowAvailable] = useState(false);
+  const [ktcShowMyTeam, setKtcShowMyTeam] = useState(false);
+  const [ktcSearch, setKtcSearch] = useState('');
   const doLoadRef = useRef(null);
   const leagueRef = useRef(null);
 
@@ -918,6 +1030,16 @@ function DynastyAnalyzer() {
     // KTC embeds the live rankings as `var playersArray = [...]` inside the
     // /dynasty-rankings HTML page. There's no public JSON API, and the page
     // blocks cross-origin fetches, so we go through a CORS proxy chain.
+
+    // Return cached data if fetched within the last 24 hours
+    try {
+      const cached = localStorage.getItem('ktc_rankings_cache');
+      if (cached) {
+        const { ts, data } = JSON.parse(cached);
+        if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 100) return data;
+      }
+    } catch (_) {}
+
     const target = "https://keeptradecut.com/dynasty-rankings/";
     const proxies = [
       { name: "corsproxy.io",   url: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
@@ -956,7 +1078,10 @@ function DynastyAnalyzer() {
         let data;
         try { data = JSON.parse(literal); }
         catch (_) { data = Function('"use strict"; return (' + literal + ')')(); }
-        if (Array.isArray(data) && data.length > 100) return data;
+        if (Array.isArray(data) && data.length > 100) {
+          try { localStorage.setItem('ktc_rankings_cache', JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+          return data;
+        }
       } catch (_) {}
       finally { clearTimeout(timer); }
     }
@@ -1187,6 +1312,34 @@ function DynastyAnalyzer() {
     return out;
   }, [myTeam]);
 
+  const ktcRankedPlayers = useMemo(() => {
+    if (!Object.keys(valueMap).length) return [];
+    const playerToRoster = {};
+    for (const r of rosters) {
+      for (const id of (r.players || [])) playerToRoster[id] = r.roster_id;
+    }
+    const rosterToTeam = {};
+    for (const tc of teamCards) rosterToTeam[tc.id] = tc;
+    const result = [];
+    for (const [pid, p] of Object.entries(valueMap)) {
+      if (!p.value || p.value <= 0) continue;
+      if (!['QB', 'RB', 'WR', 'TE'].includes(p.position)) continue;
+      const rosterId = playerToRoster[pid];
+      const tc = rosterId ? rosterToTeam[rosterId] : null;
+      result.push({
+        id: pid,
+        name: p.name,
+        position: p.position,
+        nflTeam: p.team,
+        age: p.age,
+        value: p.value,
+        trend: p.trend,
+        roster: tc ? { id: tc.id, name: tc.teamName, owner: tc.owner, isMyTeam: tc.id === myTeamId } : null
+      });
+    }
+    return result.sort((a, b) => b.value - a.value).slice(0, 500);
+  }, [valueMap, rosters, teamCards, myTeamId]);
+
   doLoadRef.current = loadLeague;
   leagueRef.current = league;
 
@@ -1293,7 +1446,11 @@ function DynastyAnalyzer() {
       e('button', {
         className: 'dd-tab' + (activeView === 'fa-board' ? ' active' : ''),
         onClick: () => setActiveView('fa-board')
-      }, 'FA Board' + (freeAgents.length ? ' (' + freeAgents.length + ')' : ''))
+      }, 'FA Board' + (freeAgents.length ? ' (' + freeAgents.length + ')' : '')),
+      e('button', {
+        className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
+        onClick: () => setActiveView('ktc-rankings')
+      }, 'KTC Rankings')
     ),
 
     // Roster strip with headshots
@@ -1523,6 +1680,83 @@ function DynastyAnalyzer() {
             );
           });
           })()
+        )
+      );
+    })(),
+
+    // KTC Rankings view
+    activeView === 'ktc-rankings' && league && (() => {
+      let filtered = ktcRankedPlayers;
+      if (ktcPos !== 'ALL') filtered = filtered.filter(p => p.position === ktcPos);
+      if (ktcShowAvailable) filtered = filtered.filter(p => !p.roster);
+      if (ktcShowMyTeam) filtered = filtered.filter(p => p.roster?.isMyTeam);
+      if (ktcSearch.trim()) {
+        const q = ktcSearch.trim().toLowerCase();
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(q));
+      }
+      return e(React.Fragment, null,
+        e('div', { className: 'dd-ktc-controls' },
+          e('div', { className: 'dd-fa-filter' },
+            ['ALL', 'QB', 'RB', 'WR', 'TE'].map(pos =>
+              e('button', {
+                key: pos,
+                className: 'dd-fa-filter-btn' + (ktcPos === pos ? ' active' : ''),
+                onClick: () => setKtcPos(pos)
+              }, pos)
+            )
+          ),
+          e('div', { className: 'dd-fa-spacer' }),
+          e('button', {
+            className: 'dd-ktc-toggle-btn' + (ktcShowAvailable ? ' active' : ''),
+            onClick: () => { setKtcShowAvailable(v => !v); setKtcShowMyTeam(false); }
+          }, ktcShowAvailable ? '✓ Available Only' : 'Show Only Available'),
+          myTeam && e('button', {
+            className: 'dd-ktc-toggle-btn' + (ktcShowMyTeam ? ' active-mine' : ''),
+            onClick: () => { setKtcShowMyTeam(v => !v); setKtcShowAvailable(false); }
+          }, ktcShowMyTeam ? '★ My Team Only' : 'Show Only My Team'),
+          e('input', {
+            className: 'dd-ktc-search',
+            type: 'text',
+            placeholder: 'Search player…',
+            value: ktcSearch,
+            onChange: ev => setKtcSearch(ev.target.value)
+          })
+        ),
+        e('div', { className: 'dd-ktc-table' },
+          e('div', { className: 'dd-ktc-thead' },
+            e('span', null, '#'),
+            e('span', null, ''),
+            e('span', null, 'Player'),
+            e('span', { style: { textAlign: 'center' } }, 'Pos'),
+            e('span', { style: { textAlign: 'right' } }, 'Value'),
+            e('span', null, 'Roster Status')
+          ),
+          filtered.length === 0
+            ? e('div', { style: { padding: '40px', textAlign: 'center', color: 'var(--ink-3)', fontSize: '13px' } }, 'No players match your filters.')
+            : filtered.map((p, i) => {
+                const isMyTeam = p.roster?.isMyTeam;
+                const isOtherTeam = p.roster && !isMyTeam;
+                const rowCls = isMyTeam ? ' my-team' : isOtherTeam ? ' other-team' : '';
+                const statusEl = p.roster
+                  ? (isMyTeam
+                      ? e('span', { className: 'dd-ktc-status my-team-badge' }, '★ My Team')
+                      : e('span', { className: 'dd-ktc-status other-team-badge' }, p.roster.name)
+                    )
+                  : e('span', { className: 'dd-ktc-status fa-badge' }, 'Free Agent');
+                return e('div', { key: p.id, className: 'dd-ktc-row' + rowCls },
+                  e('span', { className: 'dd-ktc-rank' }, i + 1),
+                  e(KtcAvatar, { pid: p.id, name: p.name }),
+                  e('div', null,
+                    e('div', { className: 'dd-ktc-name' }, p.name),
+                    e('div', { className: 'dd-ktc-detail' },
+                      [p.nflTeam || 'FA', p.age ? p.age + ' yrs' : null].filter(Boolean).join(' · ')
+                    )
+                  ),
+                  e('span', { className: 'dd-ktc-pos-pill', style: { background: POS_COLORS[p.position]?.hex || '#999' } }, p.position),
+                  e('span', { className: 'dd-ktc-val' }, fmt(p.value)),
+                  statusEl
+                );
+              })
         )
       );
     })(),
