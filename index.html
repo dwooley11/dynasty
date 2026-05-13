@@ -874,7 +874,7 @@ function DynastyAnalyzer() {
     return slots.includes("SUPER_FLEX") || slots.includes("SUPERFLEX");
   }, [league]);
 
-  async function loadLeague(lid) {
+  async function loadLeague(lid, forceKtc) {
     const targetId = lid || leagueId;
     if (lid) setLeagueId(lid);
     setShowChangeInput(false);
@@ -904,7 +904,7 @@ function DynastyAnalyzer() {
 
       setStage("Pulling KeepTradeCut dynasty values…");
       const sf = lg.roster_positions?.includes("SUPER_FLEX") || lg.roster_positions?.includes("SUPERFLEX");
-      const vm = await loadValues(players, sf);
+      const vm = await loadValues(players, sf, forceKtc);
       setValueMap(vm.map);
       setValueSource(vm.source);
 
@@ -957,19 +957,21 @@ function DynastyAnalyzer() {
     }
   }
 
-  async function fetchKtcPlayersArray() {
+  async function fetchKtcPlayersArray(force) {
     // KTC embeds the live rankings as `var playersArray = [...]` inside the
     // /dynasty-rankings HTML page. There's no public JSON API, and the page
     // blocks cross-origin fetches, so we go through a CORS proxy chain.
 
-    // Return cached data if fetched within the last 24 hours
-    try {
-      const cached = localStorage.getItem('ktc_rankings_cache');
-      if (cached) {
-        const { ts, data } = JSON.parse(cached);
-        if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 100) return data;
-      }
-    } catch (_) {}
+    // Return cached data if fetched within the last 24 hours (skipped on manual refresh)
+    if (!force) {
+      try {
+        const cached = localStorage.getItem('ktc_rankings_cache');
+        if (cached) {
+          const { ts, data } = JSON.parse(cached);
+          if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 100) return data;
+        }
+      } catch (_) {}
+    }
 
     const target = "https://keeptradecut.com/dynasty-rankings/";
     const proxies = [
@@ -1019,8 +1021,8 @@ function DynastyAnalyzer() {
     return null;
   }
 
-  async function loadValues(players, sf) {
-    const ktcData = await fetchKtcPlayersArray();
+  async function loadValues(players, sf, forceKtc) {
+    const ktcData = await fetchKtcPlayersArray(forceKtc);
     if (ktcData) {
       const map = mergeValues(players, ktcData, "ktc", sf);
       if (Object.values(map).some(p => p.value > 0)) {
@@ -1245,7 +1247,7 @@ function DynastyAnalyzer() {
     return mins;
   }, [ktcRankedPlayers]);
 
-  doLoadRef.current = loadLeague;
+  doLoadRef.current = () => loadLeague(undefined, true);
   leagueRef.current = league;
 
   useEffect(() => {
@@ -1303,7 +1305,7 @@ function DynastyAnalyzer() {
       e('div', { className: 'dd-controls' },
         showCompact
           ? [
-              e('button', { key: 'refresh', className: 'dd-btn', onClick: () => loadLeague(), disabled: loading,
+              e('button', { key: 'refresh', className: 'dd-btn', onClick: () => loadLeague(undefined, true), disabled: loading,
                             style: { padding: '9px 18px' } },
                 loading ? 'Loading…' : '↻ Refresh'),
               e('button', { key: 'change', className: 'dd-btn-ghost',
