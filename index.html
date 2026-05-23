@@ -767,17 +767,18 @@ body {
 }
 .dd-trade-section-tot { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .dd-trade-asset {
-  display: grid; grid-template-columns: auto 1fr auto auto auto;
-  gap: 8px; align-items: center;
+  display: flex; align-items: center; gap: 8px;
   padding: 5px 8px; border-radius: 7px; background: var(--bg-3);
   font-size: 12px;
 }
 .dd-trade-asset.recv { background: #ecfdf5; }
 .dd-trade-asset .dd-asset-pos {
+  flex-shrink: 0;
   font-size: 9px; font-weight: 800; padding: 2px 5px;
   border-radius: 4px; color: #fff; letter-spacing: 0.04em;
 }
 .dd-trade-asset .dd-asset-name {
+  flex: 1; min-width: 0;
   font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .dd-trade-asset .dd-asset-val {
@@ -976,12 +977,27 @@ function pickStarters(playerIds, valueMap, rosterPositions) {
   return { starters, bench, totalStarterValue };
 }
 
-function approxPickValue(season, round, currentSeason, isSF) {
+const PICK_TIERS = ['early', 'mid', 'late'];
+const PICK_TIER_LABELS = { early: 'Early', mid: 'Mid', late: 'Late' };
+const PICK_VALUE_TABLE = {
+  sf: {
+    1: { early: 6500, mid: 5500, late: 4500 },
+    2: { early: 3000, mid: 2400, late: 1900 },
+    3: { early: 1200, mid:  900, late:  650 },
+    4: { early:  500, mid:  350, late:  250 }
+  },
+  nsf: {
+    1: { early: 5000, mid: 4200, late: 3400 },
+    2: { early: 2100, mid: 1700, late: 1350 },
+    3: { early:  800, mid:  600, late:  450 },
+    4: { early:  300, mid:  200, late:  140 }
+  }
+};
+function approxPickValue(season, round, currentSeason, isSF, tier) {
   const yearsOut = Math.max(0, season - currentSeason);
-  const base = isSF
-    ? { 1: 5500, 2: 2400, 3: 900, 4: 350 }
-    : { 1: 4200, 2: 1700, 3: 600, 4: 200 };
-  const v = base[round] || 100;
+  const t = tier && PICK_TIERS.includes(tier) ? tier : 'mid';
+  const row = (isSF ? PICK_VALUE_TABLE.sf : PICK_VALUE_TABLE.nsf)[round];
+  const v = row ? (row[t] ?? row.mid) : 100;
   return Math.round(v * Math.pow(0.85, yearsOut));
 }
 
@@ -1071,6 +1087,7 @@ function DynastyAnalyzer() {
   const [tradeAssets, setTradeAssets] = useState([]);
   const [tradePickerOpen, setTradePickerOpen] = useState({});
   const [tradePickerSearch, setTradePickerSearch] = useState({});
+  const [pickTiers, setPickTiers] = useState({});
   const doLoadRef = useRef(null);
   const leagueRef = useRef(null);
 
@@ -1413,16 +1430,34 @@ function DynastyAnalyzer() {
     setTradeTeams([]);
     setTradePickerOpen({});
     setTradePickerSearch({});
+    setPickTiers({});
   }, [league?.league_id]);
+
+  const currentSeasonForPicks = useMemo(() => {
+    if (!league) return new Date().getFullYear();
+    const ls = parseInt(league.season || `${new Date().getFullYear()}`, 10);
+    return league.status === 'complete' ? ls + 1 : ls;
+  }, [league]);
+
+  const valueOfPick = (p) => {
+    const k = pickKey(p);
+    const tier = pickTiers[k] || 'mid';
+    return approxPickValue(p.season, p.round, currentSeasonForPicks, isSuperflex, tier);
+  };
+
+  const assetValue = (a) => a.kind === 'pick' ? valueOfPick(a) : a.value;
 
   const tradeSim = useMemo(() => {
     if (!league || !teamCards.length) return null;
     const slots = league.roster_positions || [];
-    const baseById = Object.fromEntries(teamCards.map(t => [t.id, t]));
 
     const simTeams = teamCards.map(t => {
       if (!tradeTeams.includes(t.id)) {
-        return { ...t, simChanged: false, sent: [], recv: [] };
+        return {
+          ...t, simChanged: false, sent: [], recv: [],
+          prePickValue: t.pickValue,
+          preCombinedValue: t.combinedValue
+        };
       }
       const sent = tradeAssets.filter(a => a.from === t.id);
       const recv = tradeAssets.filter(a => a.to === t.id);
@@ -1440,12 +1475,18 @@ function DynastyAnalyzer() {
       const keptPicks = t.picks.filter(p => !sentPickKeys.has(pickKey(p)));
       const recvPicks = recv.filter(a => a.kind === 'pick').map(a => ({
         season: a.season, round: a.round, original: a.original,
-        owner: t.id, value: a.value,
+        owner: t.id, value: valueOfPick(a),
         label: `${a.season} R${a.round} (via trade)`
       }));
-      const newPicks = [...keptPicks, ...recvPicks]
+      // Re-value kept picks under any tier overrides set on them.
+      const keptPicksRevalued = keptPicks.map(p => ({ ...p, value: valueOfPick(p) }));
+      const newPicks = [...keptPicksRevalued, ...recvPicks]
         .sort((a, b) => a.season - b.season || a.round - b.round);
       const newPickValue = newPicks.reduce((s, p) => s + (p.value || 0), 0);
+
+      // Pre-trade pick value with tier overrides applied to picks currently in the trade.
+      const prePickValue = t.picks.reduce((s, p) => s + valueOfPick(p), 0);
+      const preCombinedValue = t.totalValue + prePickValue;
 
       const owned = newPlayerIds.map(id => valueMap[id]).filter(p => p && p.value > 0);
       const totalValue = owned.reduce((s, p) => s + p.value, 0);
@@ -1461,14 +1502,15 @@ function DynastyAnalyzer() {
       }
       posValues.PICKS = newPickValue;
 
-      const sentValue = sent.reduce((s, a) => s + (a.value || 0), 0);
-      const recvValue = recv.reduce((s, a) => s + (a.value || 0), 0);
+      const sentValue = sent.reduce((s, a) => s + assetValue(a), 0);
+      const recvValue = recv.reduce((s, a) => s + assetValue(a), 0);
 
       return {
         ...t, simChanged: true,
         totalValue, totalStarterValue,
         pickValue: newPickValue,
         combinedValue: totalValue + newPickValue,
+        prePickValue, preCombinedValue,
         starters, bench, byPos, posValues,
         roster: owned.sort((a, b) => b.value - a.value),
         picks: newPicks,
@@ -1482,7 +1524,7 @@ function DynastyAnalyzer() {
     sortedSim.forEach((t, i) => { simRankById[t.id] = i + 1; });
 
     return { teams: simTeams, byId: Object.fromEntries(simTeams.map(t => [t.id, t])), simRankById };
-  }, [league, teamCards, tradeTeams, tradeAssets, valueMap, rosters]);
+  }, [league, teamCards, tradeTeams, tradeAssets, valueMap, rosters, pickTiers, isSuperflex, currentSeasonForPicks]);
 
   const origRankById = useMemo(() => {
     const m = {};
@@ -1966,15 +2008,27 @@ function DynastyAnalyzer() {
       const teamById = Object.fromEntries(teamCards.map(t => [t.id, t]));
       const isMultiWay = tradeTeams.length >= 3;
 
+      const tierSelect = (a) => e('select', {
+        className: 'dd-asset-to',
+        value: pickTiers[a.key] || 'mid',
+        onChange: ev => setPickTiers(prev => ({ ...prev, [a.key]: ev.target.value })),
+        onClick: ev => ev.stopPropagation(),
+        title: 'Assumed pick slot'
+      }, PICK_TIERS.map(t =>
+        e('option', { key: t, value: t }, PICK_TIER_LABELS[t])
+      ));
+
       const renderAssetRow = (a, fromId) => {
         const colorPos = a.kind === 'player' ? a.position : 'PICKS';
+        const liveVal = assetValue(a);
         return e('div', { key: a.key, className: 'dd-trade-asset' },
           e('span', {
             className: 'dd-asset-pos',
             style: { background: POS_COLORS[colorPos]?.hex || '#999' }
           }, a.kind === 'player' ? a.position : 'PK'),
           e('span', { className: 'dd-asset-name', title: a.label }, a.label),
-          e('span', { className: 'dd-asset-val' }, fmt(a.value)),
+          a.kind === 'pick' && tierSelect(a),
+          e('span', { className: 'dd-asset-val' }, fmt(liveVal)),
           isMultiWay
             ? e('select', {
                 className: 'dd-asset-to',
@@ -1995,6 +2049,7 @@ function DynastyAnalyzer() {
 
       const renderRecvRow = (a) => {
         const colorPos = a.kind === 'player' ? a.position : 'PICKS';
+        const liveVal = assetValue(a);
         return e('div', { key: a.from + ':' + a.key, className: 'dd-trade-asset recv' },
           e('span', {
             className: 'dd-asset-pos',
@@ -2005,9 +2060,8 @@ function DynastyAnalyzer() {
             isMultiWay && e('span', { style: { color: 'var(--ink-3)', fontWeight: 400, marginLeft: '4px' } },
               'from ' + (teamById[a.from]?.teamName || 'Team ' + a.from))
           ),
-          e('span', { className: 'dd-asset-val' }, fmt(a.value)),
-          e('span'),
-          e('span')
+          a.kind === 'pick' && tierSelect(a),
+          e('span', { className: 'dd-asset-val' }, fmt(liveVal))
         );
       };
 
@@ -2112,9 +2166,9 @@ function DynastyAnalyzer() {
             const rankDeltaCls = rankDelta > 0 ? 'delta-up' : rankDelta < 0 ? 'delta-down' : 'delta-even';
 
             const stats = [
-              { k: 'Combined', pre: base.combinedValue, post: sim.combinedValue },
+              { k: 'Combined', pre: sim.preCombinedValue, post: sim.combinedValue },
               { k: 'Starters', pre: base.totalStarterValue, post: sim.totalStarterValue },
-              { k: 'Picks',    pre: base.pickValue,       post: sim.pickValue }
+              { k: 'Picks',    pre: sim.prePickValue,     post: sim.pickValue }
             ];
 
             return e('div', { key: tid, className: 'dd-trade-panel' },
@@ -2205,7 +2259,7 @@ function DynastyAnalyzer() {
               // Position breakdown deltas
               e('div', { className: 'dd-trade-posdeltas' },
                 ['QB', 'RB', 'WR', 'TE', 'PICKS'].map(pos => {
-                  const pre = base.posValues[pos] || 0;
+                  const pre = pos === 'PICKS' ? sim.prePickValue : (base.posValues[pos] || 0);
                   const post = sim.posValues[pos] || 0;
                   const d = post - pre;
                   const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'even';
