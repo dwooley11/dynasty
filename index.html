@@ -671,6 +671,207 @@ body {
   .dd-ktc-row > *:last-child { display: none; }
   .dd-ktc-search { max-width: 100%; }
 }
+
+/* ========== Trade Calculator ========== */
+.dd-trade-teams { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px; }
+.dd-trade-team-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 10px 7px 12px; background: var(--bg-2);
+  border: 1px solid var(--line); border-radius: 999px;
+  box-shadow: var(--shadow-sm); font-size: 13px; font-weight: 600;
+}
+.dd-trade-team-chip select {
+  background: transparent; border: none; font: inherit; font-weight: 700;
+  color: var(--ink); outline: none; cursor: pointer; max-width: 180px;
+}
+.dd-trade-team-chip .dd-chip-x {
+  cursor: pointer; color: var(--ink-3); font-weight: 700;
+  padding: 0 4px; background: none; border: none; font-size: 14px;
+}
+.dd-trade-team-chip .dd-chip-x:hover { color: #a02828; }
+.dd-trade-add {
+  padding: 7px 14px; font-size: 12px; font-weight: 700;
+  border-radius: 999px; border: 1px dashed var(--ink-3);
+  background: transparent; color: var(--ink-2);
+  cursor: pointer; font-family: inherit;
+}
+.dd-trade-add:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); }
+.dd-trade-add:disabled { opacity: 0.4; cursor: not-allowed; }
+.dd-trade-reset {
+  margin-left: auto; padding: 7px 14px; font-size: 12px; font-weight: 600;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: var(--bg-2); color: var(--ink-2);
+  cursor: pointer; font-family: inherit;
+}
+.dd-trade-reset:hover { color: var(--ink); }
+
+.dd-trade-summary {
+  margin-bottom: 18px; padding: 14px 16px;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow-sm);
+}
+.dd-trade-summary-title {
+  font-size: 11px; font-weight: 700; color: var(--ink-3);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.dd-trade-summary-grid {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.dd-trade-summary-team {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 10px; background: var(--bg-3);
+  gap: 12px;
+}
+.dd-trade-summary-team.win  { background: #dcfce7; }
+.dd-trade-summary-team.lose { background: #fee2e2; }
+.dd-trade-summary-name { font-size: 13px; font-weight: 700; }
+.dd-trade-summary-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.dd-trade-summary-delta { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dd-trade-summary-delta.up    { color: #117a3a; }
+.dd-trade-summary-delta.down  { color: #a02828; }
+.dd-trade-summary-delta.even  { color: var(--ink-3); }
+
+.dd-trade-grid {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  margin-bottom: 28px;
+}
+.dd-trade-panel {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 14px; padding: 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.dd-trade-panel-head {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line-2);
+}
+.dd-trade-panel-name { font-size: 15px; font-weight: 700; }
+.dd-trade-panel-owner { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.dd-trade-panel-rank {
+  font-size: 11px; padding: 4px 10px; border-radius: 8px;
+  background: var(--bg-3); font-weight: 700;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.dd-trade-panel-rank .delta-up   { color: #117a3a; }
+.dd-trade-panel-rank .delta-down { color: #a02828; }
+.dd-trade-panel-rank .delta-even { color: var(--ink-3); }
+
+.dd-trade-section { display: flex; flex-direction: column; gap: 4px; }
+.dd-trade-section-label {
+  font-size: 10px; font-weight: 700; color: var(--ink-3);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dd-trade-section-tot { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.dd-trade-asset {
+  display: grid; grid-template-columns: auto 1fr auto auto auto;
+  gap: 8px; align-items: center;
+  padding: 5px 8px; border-radius: 7px; background: var(--bg-3);
+  font-size: 12px;
+}
+.dd-trade-asset.recv { background: #ecfdf5; }
+.dd-trade-asset .dd-asset-pos {
+  font-size: 9px; font-weight: 800; padding: 2px 5px;
+  border-radius: 4px; color: #fff; letter-spacing: 0.04em;
+}
+.dd-trade-asset .dd-asset-name {
+  font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dd-trade-asset .dd-asset-val {
+  font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-2);
+  font-size: 11px;
+}
+.dd-trade-asset .dd-asset-to {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 6px; font-size: 10px; padding: 2px 4px;
+  font-family: inherit; color: var(--ink-2); max-width: 100px;
+}
+.dd-trade-asset .dd-asset-x {
+  background: none; border: none; font-size: 16px; font-weight: 700;
+  color: var(--ink-3); cursor: pointer; padding: 0 2px; line-height: 1;
+}
+.dd-trade-asset .dd-asset-x:hover { color: #a02828; }
+.dd-trade-empty {
+  font-size: 11px; color: var(--ink-3);
+  padding: 8px 4px; text-align: center; font-style: italic;
+}
+
+.dd-trade-picker-toggle {
+  padding: 6px 12px; font-size: 11px; font-weight: 700;
+  border-radius: 8px; background: var(--bg-3);
+  border: 1px solid var(--line); color: var(--ink-2);
+  cursor: pointer; font-family: inherit;
+}
+.dd-trade-picker-toggle:hover { background: var(--bg); color: var(--ink); }
+.dd-trade-picker-toggle.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.dd-trade-picker {
+  background: var(--bg-3); border-radius: 10px; padding: 8px;
+  max-height: 260px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.dd-trade-picker-search {
+  width: 100%; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: 8px;
+  font: inherit; font-size: 12px;
+  background: var(--bg-2); margin-bottom: 4px;
+}
+.dd-trade-picker-search:focus { outline: none; border-color: var(--pos-rb); }
+.dd-trade-picker-row {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 8px; align-items: center;
+  padding: 5px 8px; border-radius: 6px; background: var(--bg-2);
+  font-size: 12px; cursor: pointer;
+}
+.dd-trade-picker-row:hover { background: #fff; box-shadow: var(--shadow-sm); }
+.dd-trade-picker-empty { font-size: 11px; color: var(--ink-3); padding: 10px; text-align: center; }
+
+.dd-trade-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 6px; padding-top: 8px; border-top: 1px solid var(--line-2);
+}
+.dd-trade-stat {
+  text-align: center; padding: 6px 4px;
+  background: var(--bg-3); border-radius: 8px;
+}
+.dd-trade-stat-k {
+  font-size: 9px; color: var(--ink-3); font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.dd-trade-stat-v {
+  font-size: 14px; font-weight: 800;
+  font-variant-numeric: tabular-nums; margin-top: 2px;
+}
+.dd-trade-stat-d {
+  font-size: 10px; font-weight: 700; margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.dd-trade-stat-d.up   { color: #117a3a; }
+.dd-trade-stat-d.down { color: #a02828; }
+.dd-trade-stat-d.even { color: var(--ink-3); }
+
+.dd-trade-posdeltas {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+  padding-top: 6px;
+}
+.dd-trade-posdelta {
+  text-align: center; padding: 5px 2px;
+  border-radius: 6px; background: var(--bg-3);
+}
+.dd-trade-posdelta .pk { font-size: 9px; font-weight: 800; letter-spacing: 0.04em; }
+.dd-trade-posdelta .pv { font-size: 10px; color: var(--ink-2); font-variant-numeric: tabular-nums; margin-top: 1px; }
+.dd-trade-posdelta .pd { font-size: 10px; font-weight: 700; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.dd-trade-posdelta .pd.up   { color: #117a3a; }
+.dd-trade-posdelta .pd.down { color: #a02828; }
+.dd-trade-posdelta .pd.even { color: var(--ink-3); }
+
+.dd-trade-empty-state {
+  padding: 40px 20px; text-align: center;
+  color: var(--ink-3); font-size: 13px;
+}
 </style>
 </head>
 <body>
@@ -866,6 +1067,10 @@ function DynastyAnalyzer() {
   const [ktcShowAvailable, setKtcShowAvailable] = useState(false);
   const [ktcShowMyTeam, setKtcShowMyTeam] = useState(false);
   const [ktcSearch, setKtcSearch] = useState('');
+  const [tradeTeams, setTradeTeams] = useState([]);
+  const [tradeAssets, setTradeAssets] = useState([]);
+  const [tradePickerOpen, setTradePickerOpen] = useState({});
+  const [tradePickerSearch, setTradePickerSearch] = useState({});
   const doLoadRef = useRef(null);
   const leagueRef = useRef(null);
 
@@ -1189,6 +1394,149 @@ function DynastyAnalyzer() {
     return out;
   }, [teamCards]);
 
+  // ===== Trade Calculator =====
+  const pickKey = (p) => `k:${p.season}:${p.round}:${p.original}`;
+  const playerKey = (id) => `p:${id}`;
+
+  // Initialize trade with my team + top opposing team when league loads
+  useEffect(() => {
+    if (teamCards.length >= 2 && tradeTeams.length === 0) {
+      const firstId = myTeamId || teamCards[0].id;
+      const secondId = teamCards.find(t => t.id !== firstId)?.id;
+      if (firstId && secondId) setTradeTeams([firstId, secondId]);
+    }
+  }, [teamCards, myTeamId]);
+
+  // Clear trade when league changes
+  useEffect(() => {
+    setTradeAssets([]);
+    setTradeTeams([]);
+    setTradePickerOpen({});
+    setTradePickerSearch({});
+  }, [league?.league_id]);
+
+  const tradeSim = useMemo(() => {
+    if (!league || !teamCards.length) return null;
+    const slots = league.roster_positions || [];
+    const baseById = Object.fromEntries(teamCards.map(t => [t.id, t]));
+
+    const simTeams = teamCards.map(t => {
+      if (!tradeTeams.includes(t.id)) {
+        return { ...t, simChanged: false, sent: [], recv: [] };
+      }
+      const sent = tradeAssets.filter(a => a.from === t.id);
+      const recv = tradeAssets.filter(a => a.to === t.id);
+
+      const sentPlayerIds = new Set(
+        sent.filter(a => a.kind === 'player').map(a => a.playerId)
+      );
+      const recvPlayerIds = recv.filter(a => a.kind === 'player').map(a => a.playerId);
+
+      const origRoster = rosters.find(r => r.roster_id === t.id);
+      const keptIds = (origRoster?.players || []).filter(id => !sentPlayerIds.has(id));
+      const newPlayerIds = [...keptIds, ...recvPlayerIds];
+
+      const sentPickKeys = new Set(sent.filter(a => a.kind === 'pick').map(a => a.key));
+      const keptPicks = t.picks.filter(p => !sentPickKeys.has(pickKey(p)));
+      const recvPicks = recv.filter(a => a.kind === 'pick').map(a => ({
+        season: a.season, round: a.round, original: a.original,
+        owner: t.id, value: a.value,
+        label: `${a.season} R${a.round} (via trade)`
+      }));
+      const newPicks = [...keptPicks, ...recvPicks]
+        .sort((a, b) => a.season - b.season || a.round - b.round);
+      const newPickValue = newPicks.reduce((s, p) => s + (p.value || 0), 0);
+
+      const owned = newPlayerIds.map(id => valueMap[id]).filter(p => p && p.value > 0);
+      const totalValue = owned.reduce((s, p) => s + p.value, 0);
+      const { starters, bench, totalStarterValue } =
+        pickStarters(newPlayerIds, valueMap, slots);
+
+      const byPos = { QB: [], RB: [], WR: [], TE: [] };
+      for (const p of owned) if (byPos[p.position]) byPos[p.position].push(p);
+      const posValues = {};
+      for (const pos of Object.keys(byPos)) {
+        byPos[pos].sort((a, b) => b.value - a.value);
+        posValues[pos] = byPos[pos].reduce((s, p) => s + p.value, 0);
+      }
+      posValues.PICKS = newPickValue;
+
+      const sentValue = sent.reduce((s, a) => s + (a.value || 0), 0);
+      const recvValue = recv.reduce((s, a) => s + (a.value || 0), 0);
+
+      return {
+        ...t, simChanged: true,
+        totalValue, totalStarterValue,
+        pickValue: newPickValue,
+        combinedValue: totalValue + newPickValue,
+        starters, bench, byPos, posValues,
+        roster: owned.sort((a, b) => b.value - a.value),
+        picks: newPicks,
+        sent, recv, sentValue, recvValue,
+        netValue: recvValue - sentValue
+      };
+    });
+
+    const sortedSim = [...simTeams].sort((a, b) => b.combinedValue - a.combinedValue);
+    const simRankById = {};
+    sortedSim.forEach((t, i) => { simRankById[t.id] = i + 1; });
+
+    return { teams: simTeams, byId: Object.fromEntries(simTeams.map(t => [t.id, t])), simRankById };
+  }, [league, teamCards, tradeTeams, tradeAssets, valueMap, rosters]);
+
+  const origRankById = useMemo(() => {
+    const m = {};
+    teamCards.forEach((t, i) => { m[t.id] = i + 1; });
+    return m;
+  }, [teamCards]);
+
+  function addTradeAsset(fromId, asset) {
+    const others = tradeTeams.filter(id => id !== fromId);
+    const toId = others[0];
+    if (!toId) return;
+    setTradeAssets(prev => {
+      if (prev.some(a => a.from === fromId && a.key === asset.key)) return prev;
+      return [...prev, { ...asset, from: fromId, to: toId }];
+    });
+  }
+
+  function removeTradeAsset(fromId, key) {
+    setTradeAssets(prev => prev.filter(a => !(a.from === fromId && a.key === key)));
+  }
+
+  function setAssetTo(fromId, key, toId) {
+    setTradeAssets(prev => prev.map(a =>
+      (a.from === fromId && a.key === key) ? { ...a, to: toId } : a
+    ));
+  }
+
+  function addTradeTeam() {
+    const used = new Set(tradeTeams);
+    const next = teamCards.find(t => !used.has(t.id));
+    if (next) setTradeTeams(prev => [...prev, next.id]);
+  }
+
+  function removeTradeTeam(id) {
+    const remaining = tradeTeams.filter(x => x !== id);
+    setTradeTeams(remaining);
+    setTradeAssets(prev => prev
+      .filter(a => a.from !== id)
+      .map(a => a.to === id ? { ...a, to: remaining[0] } : a)
+    );
+  }
+
+  function changeTradeTeam(idx, newId) {
+    if (tradeTeams.includes(newId)) return;
+    const oldId = tradeTeams[idx];
+    setTradeTeams(prev => prev.map((x, i) => i === idx ? newId : x));
+    setTradeAssets(prev => prev.filter(a => a.from !== oldId && a.to !== oldId));
+  }
+
+  function resetTrade() {
+    setTradeAssets([]);
+  }
+  // ===== End Trade Calculator =====
+
   const totalTeams = teamCards.length;
   const activeTeam = teamCards.find(t => t.id === activeTeamId);
   const activeTeamRank = activeTeam ? teamCards.findIndex(t => t.id === activeTeamId) + 1 : 0;
@@ -1353,7 +1701,11 @@ function DynastyAnalyzer() {
       e('button', {
         className: 'dd-tab' + (activeView === 'ktc-rankings' ? ' active' : ''),
         onClick: () => setActiveView('ktc-rankings')
-      }, 'Player Rankings')
+      }, 'Player Rankings'),
+      e('button', {
+        className: 'dd-tab' + (activeView === 'trade-calc' ? ' active' : ''),
+        onClick: () => setActiveView('trade-calc')
+      }, 'Trade Calculator')
     ),
 
     // Roster strip with headshots
@@ -1602,6 +1954,272 @@ function DynastyAnalyzer() {
                   statusEl
                 );
               })
+        )
+      );
+    })(),
+
+    // ===== Trade Calculator view =====
+    activeView === 'trade-calc' && league && !showChangeInput && (() => {
+      if (teamCards.length < 2 || !tradeSim) {
+        return e('div', { className: 'dd-trade-empty-state' }, 'Loading rosters…');
+      }
+      const teamById = Object.fromEntries(teamCards.map(t => [t.id, t]));
+      const isMultiWay = tradeTeams.length >= 3;
+
+      const renderAssetRow = (a, fromId) => {
+        const colorPos = a.kind === 'player' ? a.position : 'PICKS';
+        return e('div', { key: a.key, className: 'dd-trade-asset' },
+          e('span', {
+            className: 'dd-asset-pos',
+            style: { background: POS_COLORS[colorPos]?.hex || '#999' }
+          }, a.kind === 'player' ? a.position : 'PK'),
+          e('span', { className: 'dd-asset-name', title: a.label }, a.label),
+          e('span', { className: 'dd-asset-val' }, fmt(a.value)),
+          isMultiWay
+            ? e('select', {
+                className: 'dd-asset-to',
+                value: a.to,
+                onChange: ev => setAssetTo(fromId, a.key, parseInt(ev.target.value, 10)),
+                title: 'Send to…'
+              }, tradeTeams.filter(id => id !== fromId).map(id =>
+                e('option', { key: id, value: id }, '→ ' + (teamById[id]?.teamName || 'Team ' + id))
+              ))
+            : e('span', { className: 'dd-asset-val' }, '→'),
+          e('button', {
+            className: 'dd-asset-x',
+            onClick: () => removeTradeAsset(fromId, a.key),
+            title: 'Remove'
+          }, '×')
+        );
+      };
+
+      const renderRecvRow = (a) => {
+        const colorPos = a.kind === 'player' ? a.position : 'PICKS';
+        return e('div', { key: a.from + ':' + a.key, className: 'dd-trade-asset recv' },
+          e('span', {
+            className: 'dd-asset-pos',
+            style: { background: POS_COLORS[colorPos]?.hex || '#999' }
+          }, a.kind === 'player' ? a.position : 'PK'),
+          e('span', { className: 'dd-asset-name', title: a.label },
+            a.label,
+            isMultiWay && e('span', { style: { color: 'var(--ink-3)', fontWeight: 400, marginLeft: '4px' } },
+              'from ' + (teamById[a.from]?.teamName || 'Team ' + a.from))
+          ),
+          e('span', { className: 'dd-asset-val' }, fmt(a.value)),
+          e('span'),
+          e('span')
+        );
+      };
+
+      return e(React.Fragment, null,
+        // Team chips
+        e('div', { className: 'dd-trade-teams' },
+          tradeTeams.map((tid, idx) => {
+            const t = teamById[tid];
+            return e('div', { key: idx, className: 'dd-trade-team-chip' },
+              e('span', { style: { color: 'var(--ink-3)', fontSize: '11px', fontWeight: 700 } }, 'Team ' + (idx + 1)),
+              e('select', {
+                value: tid,
+                onChange: ev => changeTradeTeam(idx, parseInt(ev.target.value, 10))
+              }, teamCards.map(tc =>
+                e('option', {
+                  key: tc.id, value: tc.id,
+                  disabled: tradeTeams.includes(tc.id) && tc.id !== tid
+                }, tc.teamName)
+              )),
+              tradeTeams.length > 2 && e('button', {
+                className: 'dd-chip-x', onClick: () => removeTradeTeam(tid), title: 'Remove from trade'
+              }, '×')
+            );
+          }),
+          e('button', {
+            className: 'dd-trade-add',
+            onClick: addTradeTeam,
+            disabled: tradeTeams.length >= teamCards.length
+          }, '+ Add team'),
+          tradeAssets.length > 0 && e('button', {
+            className: 'dd-trade-reset', onClick: resetTrade
+          }, 'Reset trade')
+        ),
+
+        // Top-line summary
+        (() => {
+          const participants = tradeTeams.map(id => tradeSim.byId[id]).filter(Boolean);
+          const anyAssets = tradeAssets.length > 0;
+          return e('div', { className: 'dd-trade-summary' },
+            e('div', { className: 'dd-trade-summary-title' }, anyAssets ? 'Trade Outcome' : 'Pick assets below to simulate'),
+            e('div', { className: 'dd-trade-summary-grid' },
+              participants.map(p => {
+                const net = p.netValue || 0;
+                const cls = !anyAssets ? '' : net > 0 ? 'win' : net < 0 ? 'lose' : '';
+                const deltaCls = net > 0 ? 'up' : net < 0 ? 'down' : 'even';
+                const oldR = origRankById[p.id];
+                const newR = tradeSim.simRankById[p.id];
+                const rankDelta = oldR - newR;
+                return e('div', { key: p.id, className: 'dd-trade-summary-team ' + cls },
+                  e('div', null,
+                    e('div', { className: 'dd-trade-summary-name' }, p.teamName),
+                    e('div', { className: 'dd-trade-summary-sub' },
+                      'Rank ' + oldR + ' → ' + newR,
+                      rankDelta !== 0 && ' (' + (rankDelta > 0 ? '↑' : '↓') + Math.abs(rankDelta) + ')'
+                    )
+                  ),
+                  e('div', { className: 'dd-trade-summary-delta ' + deltaCls },
+                    (net > 0 ? '+' : '') + fmt(net)
+                  )
+                );
+              })
+            )
+          );
+        })(),
+
+        // Per-team panels
+        e('div', { className: 'dd-trade-grid' },
+          tradeTeams.map(tid => {
+            const base = teamById[tid];
+            const sim = tradeSim.byId[tid];
+            if (!base || !sim) return null;
+
+            const pickerOpen = !!tradePickerOpen[tid];
+            const pickerQuery = (tradePickerSearch[tid] || '').toLowerCase().trim();
+            const inTradeKeys = new Set(
+              tradeAssets.filter(a => a.from === tid).map(a => a.key)
+            );
+
+            // Available players & picks (their roster minus already-added)
+            const availPlayers = base.roster
+              .filter(p => !inTradeKeys.has(playerKey(p.id)))
+              .filter(p => !pickerQuery || p.name.toLowerCase().includes(pickerQuery))
+              .map(p => ({
+                key: playerKey(p.id), kind: 'player', playerId: p.id,
+                label: p.name, position: p.position, value: p.value
+              }));
+            const availPicks = base.picks
+              .filter(p => !inTradeKeys.has(pickKey(p)))
+              .filter(p => !pickerQuery || p.label.toLowerCase().includes(pickerQuery))
+              .map(p => ({
+                key: pickKey(p), kind: 'pick',
+                label: p.label, value: p.value,
+                season: p.season, round: p.round, original: p.original
+              }));
+
+            const sending = tradeAssets.filter(a => a.from === tid);
+            const receiving = tradeAssets.filter(a => a.to === tid);
+
+            const oldR = origRankById[tid];
+            const newR = tradeSim.simRankById[tid];
+            const rankDelta = oldR - newR;
+            const rankDeltaCls = rankDelta > 0 ? 'delta-up' : rankDelta < 0 ? 'delta-down' : 'delta-even';
+
+            const stats = [
+              { k: 'Combined', pre: base.combinedValue, post: sim.combinedValue },
+              { k: 'Starters', pre: base.totalStarterValue, post: sim.totalStarterValue },
+              { k: 'Picks',    pre: base.pickValue,       post: sim.pickValue }
+            ];
+
+            return e('div', { key: tid, className: 'dd-trade-panel' },
+              // Head
+              e('div', { className: 'dd-trade-panel-head' },
+                e('div', null,
+                  e('div', { className: 'dd-trade-panel-name' }, base.teamName),
+                  e('div', { className: 'dd-trade-panel-owner' }, '@' + base.owner)
+                ),
+                e('div', { className: 'dd-trade-panel-rank' },
+                  'Rank ', oldR, ' → ', newR, ' ',
+                  rankDelta !== 0 && e('span', { className: rankDeltaCls },
+                    rankDelta > 0 ? '↑' + rankDelta : '↓' + Math.abs(rankDelta)
+                  )
+                )
+              ),
+
+              // Sending
+              e('div', { className: 'dd-trade-section' },
+                e('div', { className: 'dd-trade-section-label' },
+                  e('span', null, 'Sending'),
+                  e('span', { className: 'dd-trade-section-tot' },
+                    sending.length ? '−' + fmt(sim.sentValue) : '—')
+                ),
+                sending.length === 0
+                  ? e('div', { className: 'dd-trade-empty' }, 'No assets selected')
+                  : sending.map(a => renderAssetRow(a, tid))
+              ),
+
+              // Receiving
+              e('div', { className: 'dd-trade-section' },
+                e('div', { className: 'dd-trade-section-label' },
+                  e('span', null, 'Receiving'),
+                  e('span', { className: 'dd-trade-section-tot' },
+                    receiving.length ? '+' + fmt(sim.recvValue) : '—')
+                ),
+                receiving.length === 0
+                  ? e('div', { className: 'dd-trade-empty' }, 'No assets coming in')
+                  : receiving.map(a => renderRecvRow(a))
+              ),
+
+              // Picker toggle
+              e('button', {
+                className: 'dd-trade-picker-toggle' + (pickerOpen ? ' active' : ''),
+                onClick: () => setTradePickerOpen(prev => ({ ...prev, [tid]: !prev[tid] }))
+              }, pickerOpen ? '− Hide assets' : '+ Add assets from this roster'),
+
+              // Picker
+              pickerOpen && e('div', { className: 'dd-trade-picker' },
+                e('input', {
+                  className: 'dd-trade-picker-search',
+                  placeholder: 'Search player or pick…',
+                  value: tradePickerSearch[tid] || '',
+                  onChange: ev => setTradePickerSearch(prev => ({ ...prev, [tid]: ev.target.value }))
+                }),
+                (availPlayers.length + availPicks.length) === 0
+                  ? e('div', { className: 'dd-trade-picker-empty' }, 'Nothing matches')
+                  : [...availPlayers, ...availPicks].map(asset =>
+                      e('div', {
+                        key: asset.key, className: 'dd-trade-picker-row',
+                        onClick: () => addTradeAsset(tid, asset)
+                      },
+                        e('span', {
+                          className: 'dd-asset-pos',
+                          style: { background: POS_COLORS[asset.kind === 'player' ? asset.position : 'PICKS']?.hex || '#999' }
+                        }, asset.kind === 'player' ? asset.position : 'PK'),
+                        e('span', { className: 'dd-asset-name', title: asset.label }, asset.label),
+                        e('span', { className: 'dd-asset-val' }, fmt(asset.value))
+                      )
+                    )
+              ),
+
+              // Value stats with deltas
+              e('div', { className: 'dd-trade-stats' },
+                stats.map(s => {
+                  const d = s.post - s.pre;
+                  const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'even';
+                  return e('div', { key: s.k, className: 'dd-trade-stat' },
+                    e('div', { className: 'dd-trade-stat-k' }, s.k),
+                    e('div', { className: 'dd-trade-stat-v' }, fmt(s.post)),
+                    e('div', { className: 'dd-trade-stat-d ' + cls },
+                      d === 0 ? '—' : (d > 0 ? '+' : '') + fmt(d)
+                    )
+                  );
+                })
+              ),
+
+              // Position breakdown deltas
+              e('div', { className: 'dd-trade-posdeltas' },
+                ['QB', 'RB', 'WR', 'TE', 'PICKS'].map(pos => {
+                  const pre = base.posValues[pos] || 0;
+                  const post = sim.posValues[pos] || 0;
+                  const d = post - pre;
+                  const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'even';
+                  return e('div', { key: pos, className: 'dd-trade-posdelta' },
+                    e('div', { className: 'pk', style: { color: POS_COLORS[pos]?.hex || '#999' } }, pos),
+                    e('div', { className: 'pv' }, fmt(post)),
+                    e('div', { className: 'pd ' + cls },
+                      d === 0 ? '—' : (d > 0 ? '+' : '') + fmt(d)
+                    )
+                  );
+                })
+              )
+            );
+          })
         )
       );
     })(),
