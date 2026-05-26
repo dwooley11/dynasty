@@ -1472,6 +1472,18 @@ function DynastyAnalyzer() {
       const { starters, bench, totalStarterValue } = pickStarters(playerIds, redraftValueMap, league.roster_positions);
       const user = users.find(u => u.user_id === r.owner_id);
 
+      // Depth: top bench players with diminishing weight per rank.
+      // Starters dominate the ranking; depth provides a smaller tiebreaker
+      // that rewards teams able to survive byes/injuries.
+      const DEPTH_PLAYERS = 6;
+      const DEPTH_DECAY = 0.75;
+      let depthValue = 0;
+      for (let k = 0; k < Math.min(DEPTH_PLAYERS, bench.length); k++) {
+        depthValue += bench[k].value * Math.pow(DEPTH_DECAY, k);
+      }
+      const DEPTH_WEIGHT = 0.35;
+      const combinedValue = totalStarterValue + depthValue * DEPTH_WEIGHT;
+
       const byPos = { QB: [], RB: [], WR: [], TE: [] };
       for (const p of owned) {
         if (byPos[p.position]) byPos[p.position].push(p);
@@ -1487,8 +1499,8 @@ function DynastyAnalyzer() {
         owner: user?.display_name || `Team ${r.roster_id}`,
         teamName: user?.metadata?.team_name || user?.display_name || `Team ${r.roster_id}`,
         avatar: user?.avatar,
-        totalValue, totalStarterValue,
-        combinedValue: totalStarterValue,
+        totalValue, totalStarterValue, depthValue,
+        combinedValue,
         avgAge,
         wins: r.settings?.wins || 0,
         losses: r.settings?.losses || 0,
@@ -2049,7 +2061,7 @@ function DynastyAnalyzer() {
         )
       ),
       redraftValueSource && e('div', { style: { fontSize: '12px', color: 'var(--ink-3)', margin: '-8px 0 12px 4px' } },
-        'Values: ' + redraftValueSource + ' · Starting-lineup strength (future picks excluded)'
+        'Values: ' + redraftValueSource + ' · Starting lineup + weighted bench depth (future picks excluded)'
       ),
       e('div', { className: 'dd-rank-list' },
         (() => {
@@ -2103,6 +2115,10 @@ function DynastyAnalyzer() {
                 e('span', null,
                   e('span', { className: 'dd-rank-stat-k' }, 'Starters'),
                   e('span', { className: 'dd-rank-stat-v' }, fmt(t.totalStarterValue))
+                ),
+                e('span', null,
+                  e('span', { className: 'dd-rank-stat-k' }, 'Depth'),
+                  e('span', { className: 'dd-rank-stat-v' }, fmt(t.depthValue || 0))
                 ),
                 e('span', null,
                   e('span', { className: 'dd-rank-stat-k' }, 'Avg Age'),
