@@ -1186,16 +1186,77 @@ function DynastyAnalyzer() {
     }
   }
 
-  async function fetchKtcPlayersArray(force, kind = 'dynasty') {
-    // KTC embeds the live rankings as `var playersArray = [...]` inside the
-    // /dynasty-rankings or /fantasy-rankings HTML page. There's no public JSON
-    // API, and the page blocks cross-origin fetches, so we go through a CORS
-    // proxy chain.
+  // Parse KTC's server-rendered HTML — each player is a .onePlayer div.
+  // Returns data in the same shape mergeValues expects (superflexValues / oneQBValues).
+  function parseKtcHtml(html, sf) {
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const playerEls = doc.querySelectorAll('.onePlayer');
+      if (!playerEls.length) return [];
+      const result = [];
+      for (const el of playerEls) {
+        const nameEl = el.querySelector('.player-name a') || el.querySelector('.player-name');
+        const valueEl = el.querySelector('.value p') || el.querySelector('.value');
+        const posEl   = el.querySelector('.position');
+        const name = nameEl?.textContent?.trim();
+        const value = parseInt(valueEl?.textContent?.trim(), 10);
+        // Position text is like "WR35" — keep only letters and uppercase
+        const pos = posEl?.textContent?.trim().replace(/[^A-Za-z]/g, '').toUpperCase() || null;
+        if (!name || isNaN(value) || value <= 0) continue;
+        const valueObj = { value, overallTrend: null };
+        result.push({
+          playerName: name,
+          position: pos,
+          superflexValues: sf ? valueObj : null,
+          oneQBValues:     sf ? null : valueObj,
+        });
+      }
+      return result;
+    } catch (_) { return []; }
+  }
+
+  // Extract the `var playersArray = [...]` JS literal from KTC's HTML (legacy approach).
+  function extractPlayersArray(html) {
+    for (const varName of ['var playersArray', 'var p =', 'playersArray=']) {
+      const idx = html.indexOf(varName);
+      if (idx < 0) continue;
+      const start = html.indexOf('[', idx);
+      if (start < 0) continue;
+      let depth = 0, inStr = null, esc = false, end = -1;
+      for (let i = start; i < html.length; i++) {
+        const c = html[i];
+        if (esc) { esc = false; continue; }
+        if (inStr) {
+          if (c === '\\') { esc = true; continue; }
+          if (c === inStr) inStr = null;
+          continue;
+        }
+        if (c === '"' || c === "'") { inStr = c; continue; }
+        if (c === '[') depth++;
+        else if (c === ']') { depth--; if (depth === 0) { end = i; break; } }
+      }
+      if (end < 0) continue;
+      const literal = html.slice(start, end + 1);
+      try { const d = JSON.parse(literal); if (Array.isArray(d) && d.length > 50) return d; } catch (_) {}
+      try { const d = Function('"use strict"; return (' + literal + ')')(); if (Array.isArray(d) && d.length > 50) return d; } catch (_) {}
+    }
+    return null;
+  }
+
+  async function fetchKtcPlayersArray(force, kind = 'dynasty', sf = false) {
     const isRedraft = kind === 'redraft';
-    const cacheKey = isRedraft ? 'ktc_redraft_cache' : 'ktc_rankings_cache';
-    const target = isRedraft
-      ? "https://keeptradecut.com/fantasy-rankings/"
-      : "https://keeptradecut.com/dynasty-rankings/";
+    // Separate caches per format so SF and 1QB leagues get correct values.
+    const cacheKey = (isRedraft ? 'ktc_redraft' : 'ktc_dynasty') + (sf ? '_sf' : '_1qb');
+    // KTC format param: 2 = Superflex dynasty, 1 = 1QB dynasty (redraft uses same numbers)
+    const fmt = sf ? 2 : 1;
+    const filters = isRedraft ? 'QB%7CWR%7CRB%7CTE' : 'QB%7CWR%7CRB%7CTE%7CRDP';
+    const targetNew = isRedraft
+      ? `https://keeptradecut.com/fantasy-rankings?format=${fmt}&filters=${filters}`
+      : `https://keeptradecut.com/dynasty-rankings?format=${fmt}&filters=${filters}`;
+    // Legacy URL (no format param) as last-resort fallback
+    const targetLegacy = isRedraft
+      ? 'https://keeptradecut.com/fantasy-rankings/'
+      : 'https://keeptradecut.com/dynasty-rankings/';
     const label = isRedraft ? 'KeepTradeCut redraft' : 'KeepTradeCut dynasty';
 
     // Return cached data if fetched within the last 24 hours (skipped on manual refresh)
@@ -1204,7 +1265,7 @@ function DynastyAnalyzer() {
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const { ts, data } = JSON.parse(cached);
-          if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 100) return data;
+          if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 50) return data;
         }
       } catch (_) {}
     }
@@ -1215,49 +1276,39 @@ function DynastyAnalyzer() {
       { name: "codetabs.com",   url: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
       { name: "thingproxy",     url: (u) => `https://thingproxy.freeboard.io/fetch/${u}` }
     ];
-    for (const { name, url: make } of proxies) {
-      setStage(`Pulling ${label} values via ${name}…`);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 12000);
-      try {
-        const res = await fetch(make(target), { signal: ctrl.signal });
-        if (!res.ok) continue;
-        const html = await res.text();
-        const idx = html.indexOf("var playersArray");
-        if (idx < 0) continue;
-        const start = html.indexOf("[", idx);
-        if (start < 0) continue;
-        // Walk bracket depth so we don't trip on `]` inside string values.
-        let depth = 0, inStr = null, esc = false, end = -1;
-        for (let i = start; i < html.length; i++) {
-          const c = html[i];
-          if (esc) { esc = false; continue; }
-          if (inStr) {
-            if (c === "\\") { esc = true; continue; }
-            if (c === inStr) inStr = null;
-            continue;
+
+    for (const target of [targetNew, targetLegacy]) {
+      for (const { name, url: make } of proxies) {
+        setStage(`Pulling ${label} values via ${name}…`);
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 12000);
+        try {
+          const res = await fetch(make(target), { signal: ctrl.signal });
+          if (!res.ok) continue;
+          const html = await res.text();
+
+          // Approach 1: legacy var playersArray embedded JS variable
+          const jsData = extractPlayersArray(html);
+          if (jsData) {
+            try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: jsData })); } catch (_) {}
+            return jsData;
           }
-          if (c === '"' || c === "'") { inStr = c; continue; }
-          if (c === "[") depth++;
-          else if (c === "]") { depth--; if (depth === 0) { end = i; break; } }
-        }
-        if (end < 0) continue;
-        const literal = html.slice(start, end + 1);
-        let data;
-        try { data = JSON.parse(literal); }
-        catch (_) { data = Function('"use strict"; return (' + literal + ')')(); }
-        if (Array.isArray(data) && data.length > 100) {
-          try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
-          return data;
-        }
-      } catch (_) {}
-      finally { clearTimeout(timer); }
+
+          // Approach 2: server-rendered HTML with .onePlayer elements
+          const htmlData = parseKtcHtml(html, sf);
+          if (htmlData.length > 50) {
+            try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: htmlData })); } catch (_) {}
+            return htmlData;
+          }
+        } catch (_) {}
+        finally { clearTimeout(timer); }
+      }
     }
     return null;
   }
 
   async function loadValues(players, sf, forceKtc) {
-    const ktcData = await fetchKtcPlayersArray(forceKtc, 'dynasty');
+    const ktcData = await fetchKtcPlayersArray(forceKtc, 'dynasty', sf);
     if (ktcData) {
       const map = mergeValues(players, ktcData, "ktc", sf);
       if (Object.values(map).some(p => p.value > 0)) {
@@ -1275,7 +1326,7 @@ function DynastyAnalyzer() {
   }
 
   async function loadRedraftValues(players, sf, forceKtc) {
-    const ktcData = await fetchKtcPlayersArray(forceKtc, 'redraft');
+    const ktcData = await fetchKtcPlayersArray(forceKtc, 'redraft', sf);
     if (ktcData) {
       const map = mergeValues(players, ktcData, "ktc", sf);
       if (Object.values(map).some(p => p.value > 0)) {
@@ -1296,12 +1347,14 @@ function DynastyAnalyzer() {
     const byName = {};
     if (source === "ktc") {
       for (const row of valueData || []) {
-        const vals = sf
-          ? (row.superflexValues ?? row.oneQBValues)
-          : (row.oneQBValues ?? row.superflexValues);
+        // Handle both old field names (superflexValues/oneQBValues) and newer variants (sf/oneQB)
+        const sfVals  = row.superflexValues ?? row.sf;
+        const oneQbVals = row.oneQBValues ?? row.oneQB;
+        const vals = sf ? (sfVals ?? oneQbVals) : (oneQbVals ?? sfVals);
         const v = vals?.value;
         if (!v) continue;
-        byName[normName(row.playerName)] = { value: v, trend: vals?.overallTrend ?? null, position: row.position, name: row.playerName };
+        const trend = vals?.overallTrend ?? vals?.trend ?? null;
+        byName[normName(row.playerName)] = { value: v, trend, position: row.position, name: row.playerName };
       }
     } else {
       const list = valueData?.players || valueData || [];
