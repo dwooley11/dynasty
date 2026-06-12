@@ -1216,8 +1216,26 @@ function DynastyAnalyzer() {
   }
 
   // Extract the `var playersArray = [...]` JS literal from KTC's HTML (legacy approach).
+  // Also tries Next.js __NEXT_DATA__ embedded JSON and alternate variable names.
   function extractPlayersArray(html) {
-    for (const varName of ['var playersArray', 'var p =', 'playersArray=']) {
+    // Approach A: Next.js __NEXT_DATA__ script tag
+    const ndIdx = html.indexOf('id="__NEXT_DATA__"');
+    if (ndIdx >= 0) {
+      const ndStart = html.indexOf('>', ndIdx) + 1;
+      const ndEnd   = html.indexOf('</script>', ndStart);
+      if (ndStart > 0 && ndEnd > ndStart) {
+        try {
+          const nd = JSON.parse(html.slice(ndStart, ndEnd));
+          for (const key of ['players', 'playersArray', 'rankings', 'playerRankings', 'data']) {
+            const arr = nd?.props?.pageProps?.[key] ?? nd?.props?.[key];
+            if (Array.isArray(arr) && arr.length > 50) return arr;
+          }
+        } catch (_) {}
+      }
+    }
+
+    // Approach B: var playersArray / playersArray= literal in a <script> block
+    for (const varName of ['var playersArray', 'playersArray=']) {
       const idx = html.indexOf(varName);
       if (idx < 0) continue;
       const start = html.indexOf('[', idx);
@@ -1274,9 +1292,23 @@ function DynastyAnalyzer() {
       { name: "corsproxy.io",   url: (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` },
       { name: "allorigins.win", url: (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}` },
       { name: "codetabs.com",   url: (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}` },
-      { name: "thingproxy",     url: (u) => `https://thingproxy.freeboard.io/fetch/${u}` }
+      { name: "thingproxy",     url: (u) => `https://thingproxy.freeboard.io/fetch/${u}` },
+      { name: "cors.sh",        url: (u) => `https://proxy.cors.sh/${u}` },
     ];
 
+    // Helper: parse and save data from an HTML string. Returns data array or null.
+    const tryHtml = (html) => {
+      const jsData = extractPlayersArray(html);
+      if (jsData) return jsData;
+      const htmlData = parseKtcHtml(html, sf);
+      return htmlData.length > 50 ? htmlData : null;
+    };
+
+    const save = (data) => {
+      try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+    };
+
+    // --- Phase 1: CORS proxies ---
     for (const target of [targetNew, targetLegacy]) {
       for (const { name, url: make } of proxies) {
         setStage(`Pulling ${label} values via ${name}…`);
@@ -1285,25 +1317,51 @@ function DynastyAnalyzer() {
         try {
           const res = await fetch(make(target), { signal: ctrl.signal });
           if (!res.ok) continue;
-          const html = await res.text();
-
-          // Approach 1: legacy var playersArray embedded JS variable
-          const jsData = extractPlayersArray(html);
-          if (jsData) {
-            try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: jsData })); } catch (_) {}
-            return jsData;
-          }
-
-          // Approach 2: server-rendered HTML with .onePlayer elements
-          const htmlData = parseKtcHtml(html, sf);
-          if (htmlData.length > 50) {
-            try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: htmlData })); } catch (_) {}
-            return htmlData;
-          }
+          const data = tryHtml(await res.text());
+          if (data) { save(data); return data; }
         } catch (_) {}
         finally { clearTimeout(timer); }
       }
     }
+
+    // --- Phase 2: Wayback Machine (archive.org) ---
+    // KTC cannot block the Internet Archive, and archive.org serves CORS headers.
+    // Data may be 1–7 days old, which is acceptable for dynasty trade values.
+    try {
+      setStage(`Pulling ${label} values via archive.org…`);
+      const cdxCtrl = new AbortController();
+      const cdxTimer = setTimeout(() => cdxCtrl.abort(), 8000);
+      let ts;
+      try {
+        const cdxRes = await fetch(
+          `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(targetLegacy)}&output=json&limit=1&fl=timestamp&filter=statuscode:200&fastLatest=true`,
+          { signal: cdxCtrl.signal }
+        );
+        if (cdxRes.ok) {
+          const rows = await cdxRes.json();
+          ts = rows?.[1]?.[0]; // row 0 = header ["timestamp"], row 1 = most recent hit
+        }
+      } catch (_) {}
+      finally { clearTimeout(cdxTimer); }
+
+      if (ts) {
+        const snapCtrl = new AbortController();
+        const snapTimer = setTimeout(() => snapCtrl.abort(), 15000);
+        try {
+          // `if_` modifier strips the WM toolbar injection → cleaner HTML for parsing
+          const snapRes = await fetch(
+            `https://web.archive.org/web/${ts}if_/${targetLegacy}`,
+            { signal: snapCtrl.signal }
+          );
+          if (snapRes.ok) {
+            const data = tryHtml(await snapRes.text());
+            if (data) { save(data); return data; }
+          }
+        } catch (_) {}
+        finally { clearTimeout(snapTimer); }
+      }
+    } catch (_) {}
+
     return null;
   }
 
