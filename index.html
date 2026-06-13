@@ -921,6 +921,21 @@ function normName(s) {
     .replace(/\s+/g, " ").trim();
 }
 
+// Parse the DynastyProcess values-players.csv (no quoted commas in this dataset).
+function parseDpCsv(text) {
+  const lines = text.trim().split('\n');
+  const raw = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const rows = [];
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    const cols = line.split(',').map(c => c.trim().replace(/"/g, ''));
+    const obj = {};
+    raw.forEach((h, i) => { obj[h] = cols[i] ?? ''; });
+    rows.push(obj);
+  }
+  return rows;
+}
+
 function shortName(name) {
   if (!name) return "";
   const parts = name.split(" ");
@@ -1373,13 +1388,28 @@ function DynastyAnalyzer() {
         return { map, source: "KeepTradeCut (live)" };
       }
     }
+    // DynastyProcess — weekly-updated dynasty values from GitHub, CORS-enabled.
+    // Much closer to KTC rankings than FantasyCalc.
+    try {
+      setStage("Pulling dynasty values via DynastyProcess…");
+      const dpRes = await fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv');
+      if (dpRes.ok) {
+        const dpData = parseDpCsv(await dpRes.text());
+        if (dpData.length > 100) {
+          const map = mergeValues(players, dpData, "dp", sf);
+          if (Object.values(map).some(p => p.value > 0)) {
+            return { map, source: "DynastyProcess (KTC unavailable)" };
+          }
+        }
+      }
+    } catch (_) {}
     try {
       const res = await fetch(`https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=${sf ? 2 : 1}&numTeams=12&ppr=1`);
       const data = await res.json();
       const map = mergeValues(players, data, "fc", sf);
-      return { map, source: "FantasyCalc (KTC unreachable)" };
+      return { map, source: "FantasyCalc (KTC unavailable)" };
     } catch (e2) {
-      throw new Error("Couldn't load player values from KTC or FantasyCalc.");
+      throw new Error("Couldn't load player values from KTC, DynastyProcess, or FantasyCalc.");
     }
   }
 
@@ -1395,7 +1425,7 @@ function DynastyAnalyzer() {
       const res = await fetch(`https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=${sf ? 2 : 1}&numTeams=12&ppr=1`);
       const data = await res.json();
       const map = mergeValues(players, data, "fc", sf);
-      return { map, source: "FantasyCalc redraft (KTC unreachable)" };
+      return { map, source: "FantasyCalc redraft (KTC unavailable)" };
     } catch (e2) {
       return { map: {}, source: null };
     }
@@ -1413,6 +1443,17 @@ function DynastyAnalyzer() {
         if (!v) continue;
         const trend = vals?.overallTrend ?? vals?.trend ?? null;
         byName[normName(row.playerName)] = { value: v, trend, position: row.position, name: row.playerName };
+      }
+    } else if (source === "dp") {
+      // DynastyProcess values-players.csv — value_1qb / value_2qb columns
+      for (const row of valueData || []) {
+        const name = row.player;
+        const pos  = (row.pos || '').toUpperCase();
+        const v1   = parseFloat(row.value_1qb);
+        const v2   = parseFloat(row.value_2qb);
+        const v    = Math.round(sf ? (isNaN(v2) ? v1 : v2) : (isNaN(v1) ? v2 : v1));
+        if (!name || isNaN(v) || v <= 0) continue;
+        byName[normName(name)] = { value: v, trend: null, position: pos, name };
       }
     } else {
       const list = valueData?.players || valueData || [];
