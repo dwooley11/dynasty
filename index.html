@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>Dynasty League Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1057,6 +1060,20 @@ function KtcAvatar({ pid, name }) {
         })
   );
 }
+
+// One-time cleanup: purge cached values written by earlier versions that
+// pulled from the DynastyProcess CSV mirror or FantasyCalc. Those keys are
+// no longer read, but leaving them behind confuses users who inspect
+// storage. Runs once per browser via a version marker.
+(function purgeLegacyValueCaches() {
+  try {
+    if (localStorage.getItem('dda_cache_purge_v1')) return;
+    for (const k of ['dp_mirror_sf', 'dp_mirror_1qb', 'fc_dynasty_sf', 'fc_dynasty_1qb', 'fc_redraft_sf', 'fc_redraft_1qb']) {
+      localStorage.removeItem(k);
+    }
+    localStorage.setItem('dda_cache_purge_v1', '1');
+  } catch (_) {}
+})();
 
 function DynastyAnalyzer() {
   const [username, setUsername] = useState("");
