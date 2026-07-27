@@ -1324,12 +1324,93 @@ function DynastyAnalyzer() {
     return null;
   }
 
+  // Minimal CSV line parser for the DynastyProcess mirror (handles quoted fields
+   // and escaped double-quotes).
+  function parseCsvLine(line) {
+    const out = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"') {
+          if (line[i + 1] === '"') { cur += '"'; i++; }
+          else inQ = false;
+        } else cur += c;
+      } else {
+        if (c === ',') { out.push(cur); cur = ''; }
+        else if (c === '"') inQ = true;
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  // DynastyProcess publishes a daily-scraped KTC values CSV on GitHub with CORS
+  // enabled, so the browser can fetch it directly — no proxy needed. Used as a
+  // fallback when the direct KTC scrape fails (which happens whenever KTC's
+  // Cloudflare protection blocks the public CORS proxies).
+  async function fetchDynastyProcessMirror(force, sf) {
+    const cacheKey = 'dp_mirror_' + (sf ? 'sf' : '1qb');
+    if (!force) {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const { ts, data } = JSON.parse(cached);
+          if (Date.now() - ts < 86400000 && Array.isArray(data) && data.length > 50) return data;
+        }
+      } catch (_) {}
+    }
+    const url = 'https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv';
+    setStage('Pulling KTC values via DynastyProcess mirror…');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const res = await fetch(url, { signal: ctrl.signal });
+      if (!res.ok) return null;
+      const csv = await res.text();
+      const lines = csv.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 50) return null;
+      const headers = parseCsvLine(lines[0]).map(h => h.replace(/^"|"$/g, ''));
+      const nameIdx = headers.indexOf('player');
+      const posIdx = headers.indexOf('pos');
+      const valIdx = headers.indexOf(sf ? 'value_2qb' : 'value_1qb');
+      if (nameIdx < 0 || valIdx < 0) return null;
+      const result = [];
+      for (let i = 1; i < lines.length; i++) {
+        const fields = parseCsvLine(lines[i]);
+        const name = fields[nameIdx]?.replace(/^"|"$/g, '');
+        const pos  = fields[posIdx]?.replace(/^"|"$/g, '').toUpperCase() || null;
+        const value = parseInt(fields[valIdx], 10);
+        if (!name || !value || value <= 0) continue;
+        const valueObj = { value, overallTrend: null };
+        result.push({
+          playerName: name,
+          position: pos,
+          superflexValues: sf ? valueObj : null,
+          oneQBValues:     sf ? null : valueObj,
+        });
+      }
+      if (result.length < 50) return null;
+      try { localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: result })); } catch (_) {}
+      return result;
+    } catch (_) { return null; }
+    finally { clearTimeout(timer); }
+  }
+
   async function loadValues(players, sf, forceKtc) {
     const ktcData = await fetchKtcPlayersArray(forceKtc, 'dynasty', sf);
     if (ktcData) {
       const map = mergeValues(players, ktcData, sf);
       if (Object.values(map).some(p => p.value > 0)) {
         return { map, source: "KeepTradeCut" };
+      }
+    }
+    const dpData = await fetchDynastyProcessMirror(forceKtc, sf);
+    if (dpData) {
+      const map = mergeValues(players, dpData, sf);
+      if (Object.values(map).some(p => p.value > 0)) {
+        return { map, source: "KeepTradeCut (via DynastyProcess mirror)" };
       }
     }
     throw new Error("Couldn't load player values from KeepTradeCut.");
