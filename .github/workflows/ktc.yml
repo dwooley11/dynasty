@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '17 10 * * *'   # daily, ~4-5am Central
   workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - scripts/fetch-ktc.mjs
+      - .github/workflows/ktc.yml
 
 permissions:
   contents: write
